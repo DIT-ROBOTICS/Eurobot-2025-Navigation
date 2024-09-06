@@ -1,0 +1,7 @@
+<launch>
+    <arg name="robot_name" default=""/>
+    <node pkg="navigation_main" type="navigation_main_node" name="navigation_main" output="screen">
+        <rosparam file="$(find navigation_main)/config/navigation_main_params.yaml" command="load"/>
+        <param name="tf_prefix" value="$(arg robot_name)" />
+    </node>
+</launch>

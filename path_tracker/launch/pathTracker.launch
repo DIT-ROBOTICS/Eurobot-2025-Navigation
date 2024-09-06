@@ -1,0 +1,41 @@
+<launch>
+
+    <!-- choose what the mode you want. Simulation or Run Real Robot -->
+    <arg name="is_run" default="true" />
+    <arg name="is_sim" default="false" />
+
+    <!-- which robot -->
+    <!-- <arg name="is_robot" default="false" /> -->
+    <arg name="is_robot" default="false" />
+    <!-- <arg name="is_robot2" default="false" /> -->
+    <arg name="is_rival" default="false" />
+    <!-- <arg name="is_rival2" default="false" /> -->
+
+    <!-- 0 -> nav_msgs::Odometry -->
+    <!-- 1 -> geometry_msgs::PoseWithCovarianceStamped -->
+    <!-- Remember to change the topic name. -->
+    <arg name="odom_type" value="0" if="$(arg is_sim)" />
+    <arg name="odom_type" value="1" if="$(arg is_run)" />
+
+    <node name="path_tracker" pkg="path_tracker" type="pathTracker" output="screen">
+
+        <!-- <remap from="cmd_vel" to="raw_cmd_vel" /> -->
+        <!-- <remap from="nav_goal" to="path_tracker_goal" /> -->
+
+        <!-- <rosparam file="$(find path_tracker)/params/pathTracker_robot.yaml" command="load" if="$(arg is_robot)"/> -->
+        <rosparam file="$(find path_tracker)/params/pathTracker_robot1.yaml" command="load" if="$(arg is_robot)"/>
+        <!-- <rosparam file="$(find path_tracker)/params/pathTracker_robot2.yaml" command="load" if="$(arg is_robot2)"/> -->
+        <rosparam file="$(find path_tracker)/params/pathTracker_robot.yaml" command="load" if="$(arg is_rival)"/>
+        <!-- <rosparam file="$(find path_tracker)/params/pathTracker_robot.yaml" command="load" if="$(arg is_rival2)"/> -->
+        <param name="frame" type="string" value="robot/map" if="$(arg is_robot)" />
+        <!-- <param name="frame" type="string" value="robot2/map" if="$(arg is_robot2)" /> -->
+        <param name="frame" type="string" value="rival/map" if="$(arg is_rival)" />
+        <!-- <param name="frame" type="string" value="rival2/map" if="$(arg is_rival2)" /> -->
+
+        <param name="odom_type" type="int" value="$(arg odom_type)" />
+        <param name="odom_topic_name" type="string" value="odom" if="$(arg is_sim)" />
+        <param name="odom_topic_name" type="string" value="ekf_pose" if="$(arg is_run)" />
+
+    </node>
+
+</launch>

@@ -1,0 +1,4 @@
+<!-- <launch>
+  <include file="$(find script_sim)/launch/sim_rival.launch" />
+  <include file="$(find script_sim)/launch/sim.launch" />
+</launch> -->

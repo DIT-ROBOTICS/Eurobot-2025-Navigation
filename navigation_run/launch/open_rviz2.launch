@@ -1,0 +1,10 @@
+<launch>
+    <!-- Eurobot 2023 -->
+    <!-- <node pkg="rviz" type="rviz" name="rviz2" args="-d $(find navigation_run)/rviz/real_rviz2.rviz" /> -->
+
+    <!-- Eurobot 2024 -->
+    <node pkg="rviz" type="rviz" name="rviz2" args="-d $(find navigation_run)/rviz/rviz_real.rviz" />
+
+    <!-- Eurobot 2023 with path planner-->
+    <!-- <node pkg="rviz" type="rviz" name="rviz2" args="-d $(find navigation_run)/rviz/rviz2_path_planner.rviz" /> -->
+</launch>

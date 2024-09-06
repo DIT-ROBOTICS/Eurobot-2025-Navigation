@@ -1,0 +1,19 @@
+<launch>
+    <node pkg="navigation_run" type="test_odom_precision" name="test_odom_precision" output="screen">
+        <!-- <param name="time" value="104.7197" /> -->
+        <param name="x_vel" value="0.3" />
+        <param name="y_vel" value="0" />
+        <param name="z_vel" value="0" />
+        <param name="linear_acc" value="0.2" />
+        <param name="angular_acc" value="0" />
+        <param name="x_dis" value="1" />
+        <param name="y_dis" value="0" />
+        <param name="z_dis" value="0" />
+        <param name="stop_dis" value="0.3" />
+        <param name="stop_dacc" value="0.2" />
+        <param name="min_vel" value="0.3" />
+
+        <param name="test_param" value="1" />
+
+    </node>
+</launch>

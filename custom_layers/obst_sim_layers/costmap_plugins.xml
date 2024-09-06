@@ -1,0 +1,5 @@
+<library path="lib/libobst_sim_layer">
+  <class type="obst_sim_layer_namespace::ObstSimLayer" base_class_type="costmap_2d::Layer">
+    <description>Used to simulate obstables</description>
+  </class>
+</library>

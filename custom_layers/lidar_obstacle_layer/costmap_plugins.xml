@@ -1,0 +1,5 @@
+<library path="lib/liblidar_obstacle_layer">
+  <class type="lidar_obstacle_layer_namespace::LidarObstacleLayer" base_class_type="costmap_2d::Layer">
+    <description>Have lidar obstacles cleaned after moved</description>
+  </class>
+</library>

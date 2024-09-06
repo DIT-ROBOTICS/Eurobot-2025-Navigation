@@ -1,0 +1,8 @@
+# image: combination_four_pot.png
+image: inv_black_white_no_pot_thick_complete.png
+resolution: 0.01 # meters / pixel
+origin: [0, 0, 0.0] # (x, y, yaw)
+negate: 0
+occupied_thresh: 0.1 # greater
+free_thresh: 0.1 # smaller
+mode: trinary # trinary, scale, raw 

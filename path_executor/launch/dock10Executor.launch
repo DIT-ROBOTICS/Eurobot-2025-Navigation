@@ -1,0 +1,19 @@
+<launch>
+    <!-- <arg name="num" default="" /> -->
+    <arg name="robot_name" default=""/>
+    <arg name="is_sim" default="" />
+    <arg name="robot_type" default="" />
+
+    <node name="dock10Executor" pkg="path_executor" type="dock10Executor" output="screen">
+        <!-- 0 -> nav_msgs::Odometry -->
+        <!-- 1 -> geometry_msgs::PoseWithCovarianceStamped -->
+        <param name="pose_type" value="0" if="$(arg is_sim)"/>
+        <param name="pose_type" value="1" unless="$(arg is_sim)"/>
+        <!-- <remap from="cmd_vel" to="dock_tracker_cmd_vel"/>
+        <remap from="dock_goal" to="dock_tracker_goal"/> -->
+        <param name="robot_type" value="$(arg robot_type)"/>
+        <rosparam file="$(find path_executor)/config/dockExecutor.yaml" command="load" />
+    
+    </node>
+
+</launch>

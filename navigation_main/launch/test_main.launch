@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="navigation_main" type="test_main" name="test_main" ns="robot1" output="screen">
+    </node>
+</launch>

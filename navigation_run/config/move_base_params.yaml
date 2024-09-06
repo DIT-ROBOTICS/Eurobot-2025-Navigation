@@ -1,0 +1,272 @@
+# move_base params
+# base_global_planner: "navfn/NavfnROS"
+base_global_planner: "global_planner/GlobalPlanner"
+# base_global_planner: "path_planner/PathPlanner"
+# base_global_planner: "carrot_planner/CarrotPlanner"
+# base_local_planner: "teb_local_planner/TebLocalPlannerROS"
+# base_local_planner: "dwa_local_planner/DWAPlannerROS"
+# base_local_planner: "base_local_planner/TrajectoryPlannerROS"
+controller_frequency: 10.0
+planner_patience: 15.0
+controller_patience: 2.0
+conservative_reset_dist: 3.0
+recovery_behavior: false 
+clearing_rotation_allowed: false
+shutdown_costmaps: false
+oscillation_timeout: 0.0
+oscillation_distance: 0.0
+planner_frequency: 0.0
+max_planning_retries: 0
+
+# global planner params
+GlobalPlanner:
+  allow_unknown: true
+  default_tolerance: 0.0
+  visualize_potential: true
+  use_dijkstra: true
+  use_quadratic: true
+  use_grid_path: false
+  old_navfn_behavior: false
+  lethal_cost: 253
+  neutral_cost: 50
+  cost_factor: 3
+  publish_potential: true
+  orientation_mode: 2
+  orientation_window_size: 3
+  outline_map: true
+# navfn parameters
+NavfnROS:
+  allow_unknown: true 
+  planner_window_x: 0.0
+  planner_window_y: 0.0
+  default_tolerance: 1
+  visualize_potential: true
+
+# local planner paramshysteresis 
+# teb_local_planner params
+TebLocalPlannerROS:
+  odom_topic: odom
+  map_frame: map
+
+  # Robot Configuration Parameters
+  acc_lim_x: 0.4
+  acc_lim_y: 0.4
+  acc_lim_theta: 1.0
+  max_vel_x: 1.0
+  max_vel_y: 1.0
+  max_vel_x_backwards: 2.0
+  max_vel_theta: 1.0
+  min_turning_radius: 0.0
+  wheelbase: 0
+  footprint_model: # types: "point", "circular", "two_circles", "line", "polygon"
+    type: "circular"
+    radius: 0.14 # for type "circular"
+    # line_start: [-0.3, 0.0] # for type "line"
+    # line_end: [0.3, 0.0] # for type "line"
+    # front_offset: 0.2 # for type "two_circles"
+    # front_radius: 0.2 # for type "two_circles"
+    # rear_offset: 0.2 # for type "two_circles"
+    # rear_radius: 0.2 # for type "two_circles"
+    # vertices: [ [0.25, -0.05], [0.18, -0.05], [0.18, -0.18], [-0.19, -0.18], [-0.25, 0], [-0.19, 0.18], [0.18, 0.18], [0.18, 0.05], [0.25, 0.05] ] # for type "polygon"
+  is_footprint_dynamic: true
+
+  # GoalTolerance
+  xy_goal_tolerance: 0.02
+  yaw_goal_tolerance: 0.15
+  free_goal_vel: false
+
+  # Trajectory Configuration
+  dt_ref: 0.1
+  dt_hysteresis: 0.02
+  min_samples: 3
+  global_plan_overwrite_orientation: false
+  max_global_plan_viapoint_sep: 0.5
+  max_global_plan_lookahead_dist: 3.0
+  force_reinit_new_goal_dist: 0.0
+  feasibility_check_no_poses: 20
+  publish_feedback: true
+  shrink_horizon_backup: true
+  allow_init_with_backwards_motion: true 
+  exact_arc_length: false
+  shrink_horizon_min_duration: 10.0
+  
+  # Obstacles
+  min_obstacle_dist: 0.03
+  include_costmap_obstacles: false
+  costmap_obstacles_behind_robot_dist: 0.03
+  obstacle_poses_affected: 0
+  inflation_dist: 0
+  include_dynamic_obstacles: false
+  legacy_obstacle_association: false
+  obstacle_association_force_inclusion_factor: 0.8
+  obstacle_association_cutoff_factor: 3
+
+  costmap_converter_plugin: ""
+  costmap_converter_spin_thread: True
+  costmap_converter_rate: 0
+  include_dynamic_obstacles: True 
+
+  # Optimization
+  no_inner_iterations: 5
+  no_outer_iterations: 20
+  penalty_epsilon: 0.55
+  weight_max_vel_x: 2.3
+  weight_max_vel_y: 2.3
+  weight_max_vel_theta: 2.3
+  weight_acc_lim_x: 0.3
+  weight_acc_lim_y: 0.3
+  weight_acc_lim_theta: 0.3
+  weight_kinematics_nh: 0
+  weight_kinematics_forward_drive: 0
+  weight_kinematics_turning_radius: 0
+  weight_optimaltime: 20
+  weight_obstacle: 0.3
+  weight_viapoint: 1
+  weight_inflation: 5
+  weight_adapt_factor: 1.0
+
+  # Homotopy Class Planner
+  enable_homotopy_class_planning: false
+  enable_multithreading: True
+  max_number_classes: 4
+  selection_cost_hysteresis: 1.0
+  selection_obst_cost_scale: 1.0
+  selection_viapoint_cost_scale: 0.3
+  selection_alternative_time_cost: false
+  roadmap_graph_no_samples: 15
+  roadmap_graph_area_width: 5
+  h_signature_prescaler: 0.5
+  h_signature_threshold: 0.1
+  obstacle_heading_threshold: 0.03
+  visualize_hc_graph: False
+  viapoints_all_candidates: false
+  switching_blocking_period: 0.0
+
+# costmap common params
+robot_radius: 0.144
+inflation_radius: 0
+
+# global costmap params
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_footprint
+  transform_tolerance: 0.10
+  
+  # Rate parameters
+  update_frequency: 20.0
+  publish_frequency: 20.0
+  rolling_window: false
+  always_send_full_costmap: true
+
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: path_layer, type: "path_layer_namespace::PathLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+    # - {name: obst_sim_layer, type: "obst_sim_layer_namespace::ObstSimLayer"}
+    # - {name: grid_layer, type: "simple_layer_namespace::GridLayer"}
+    # - {name: path_layer, type: "path_layer_namespace::PathLayer"}
+
+  static_layer:
+    enabled: true 
+    map_topic: map
+    subscribe_to_updates: true 
+    trinary_costmap: false
+    lethal_cost_threshold: 10
+    track_unknown_space: false
+
+  inflation_layer:
+    inflation_radius: 0.1
+    cost_scaling_factor: 0.1
+
+  obst_sim_layer:
+    enabled: true
+
+  grid_layer:
+    inflation_radius: 0.38
+    inscribed_radius: 0.15
+    cost_factor: 5
+
+    tolerance: 0.1
+    threshold_time: 0.1
+    clear_radius: 0.2
+
+    odom_callback_type: 0
+    # odom_topic: "/robot1111/odom"
+    # odom_topic: "odom"
+
+  path_layer:
+    enabled: true
+    OdomCallbackType: 0
+    ClearMapPeriod: -1
+    # Inflation parameters
+    Inflation:
+      Robot:
+        CostScalingFactor: 3
+        InscribedRadius: 0.19         # Unit: m
+        InflationRadius: 0.25         # Unit: m (MaxDistance)
+      Rival:
+        CostScalingFactor: 11
+        InscribedRadius: 0.22         # Unit: m
+        InflationRadius: 0.43         # Unit: m (MaxDistance)
+        InscribedRadiusDecline: 0.998  # Unit: m / Resolution
+        InflationRadiusDecline: 0.97
+    # Timeout -1 -> Disable Timeout 
+    Timeout:
+      Robot:
+        Odom: 5
+        Path: 1.0
+      Rival:
+        Odom: 5
+        Obstacle: 1.0
+    # Topic:
+      # Robot:
+        # Odom: "/robot/odom_obseleted"
+      # Rival:
+        # Odom: "/rival/final_pose"
+        # Obstacle: "obstacle_array"
+      # Pot: "/robot1111/pot"
+      # Pot: "pot"
+    # Predict Length
+    PredictLength:
+      # Robot param will be set in move_base.launch
+      Rival:
+        Odom: 1          # Unit: s
+        MaxLength:  0.7  # Unit: m
+        Resolution: 0.05 # Unit: m
+        CalRivalVelInterval: 0.25
+
+# recovery_behaviors:
+#   - name: 'clear'
+#     type: 'clear_costmap_recovery/ClearCostmapRecovery'
+  
+  # clear:
+  #   reset_distance: 0.5
+  #   layer_names: 'obst_sim_layer'
+
+# local costmap params
+local_costmap:
+  global_frame: map
+  robot_base_frame: base_footprint
+  transform_tolerance: 0.10
+  
+  # Rate parameters
+  update_frequency: 5.0
+  publish_frequency: 1.0
+  rolling_window: false
+  always_send_full_costmap: false
+
+  plugins:
+    - {name: static_layer, type: "costmap_2d::StaticLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+    # inflation layer?
+  
+  static_layer:
+    enabled: true 
+    map_topic: map 
+    subscribe_to_updates: false
+    trinary_costmap: false
+    lethal_cost_threshold: 180
+  
+  inflation_layer:
+    inflation_radius: 0.18
+    cost_scaling_factor: 0.1

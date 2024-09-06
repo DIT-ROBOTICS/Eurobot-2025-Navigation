@@ -1,0 +1,11 @@
+<launch>
+  <!-- obstale-simulation -->
+  <!-- <group ns="robot"> -->
+  <arg name="robot_name" default=""/>
+    <node name="obs_position" pkg="obstacle_simulation" type="obs_position" output="screen">
+        <param name="RobotName" type="string" value="$(arg robot_name)"/>
+        <rosparam file="$(find obstacle_simulation)/config/params.yaml" command="load"/> 
+        <!-- <remap from="/robot/obstacle_position_array" to="/robot1/obstacle_position_array" /> -->
+    </node>
+  <!-- </group> -->
+</launch>

@@ -1,0 +1,15 @@
+update_frequency: 20.0
+path_timeout: 12.0
+replan_threshold: 5
+replan_sleep_duration: 0.45
+dock_timeout: 5.0
+path_exec_goal_topic: "path_exec_goal"
+dock_exec_goal_topic: "dock_exec_goal"
+dock10_exec_goal_topic: "dock10_exec_goal"
+tf_prefix: "robot"
+path_exec_cmd_vel_topic: "path_exec_cmd_vel"
+dock_exec_cmd_vel_topic: "dock_exec_cmd_vel"
+cmd_vel_topic: "cmd_vel"
+path_exec_status_topic: "path_exec_status"
+dock_exec_status_topic: "dock_exec_status"
+status_update_timeout: 1.0

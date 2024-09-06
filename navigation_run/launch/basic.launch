@@ -1,0 +1,95 @@
+<launch>
+    <arg name="is_run" default="false" />
+    <arg name="is_sim" default="false" />
+    
+    <arg name="is_robot" default="false" />
+    <!-- <arg name="is_robot2" default="false" /> -->
+    <arg name="is_rival" default="false" />
+    <!-- <arg name="is_rival2" default="false" /> -->
+    <!-- <arg name="is_robot" default="false" /> -->
+
+    <arg name="robot_name" default="robot" if="$(arg is_robot)"/>
+    <!-- <arg name="robot_name" default="robot2" if="$(arg is_robot2)"/> -->
+    <arg name="robot_name" default="rival" if="$(arg is_rival)"/>
+    <!-- <arg name="robot_name" default="rival2" if="$(arg is_rival2)"/> -->
+    <!-- <arg name="robot_type" default="differential" />  -->
+    <arg name="robot_type" default="holonomic" />
+
+    <remap from="$(arg robot_name)/Toposition" to="/Toposition" unless="$(arg is_sim)"/>
+    <!-- <remap from="/robot1/cmd_vel" to="/cmd_vel" unless="$(arg is_sim)"/> -->
+    <!-- <include file="$(find navigation_run)/launch/commu.launch" unless="$(arg is_sim)" /> -->
+    <group ns="$(arg robot_name)">
+        <node pkg="map_server" type="map_server" name="map_server" args="$(find navigation_run)/map/basic_map.yaml">
+            <param name="frame_id" value="$(arg robot_name)/map" if="$(arg is_robot)"/>
+            <!-- <param name="frame_id" value="robot2/map" if="$(arg is_robot2)"/> -->
+        </node>
+
+        <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 $(arg robot_name)/map $(arg robot_name)/odom 20" if="$(arg is_sim)"/>
+
+        <node pkg="navigation_run" type="odometry_sim" name="odometry" if="$(arg is_sim)">
+            <param name="tf_prefix" value="$(arg robot_name)" />
+            <param name="cmd_cb_name" value="/Toposition" unless="$(arg is_sim)" />
+        </node>
+
+        <include file="$(find navigation_run)/launch/move_base.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+            <arg name="is_robot" value="$(arg is_robot)"/>
+            <!-- <arg name="is_robot2" value="$(arg is_robot2)"/> -->
+            <arg name="is_sim" value="$(arg is_sim)"/>
+            <arg name="robot_type" value="$(arg robot_type)" />
+        </include>
+
+        <!-- <node pkg="navigation_run" type="lpf" name="lpf" output="screen">
+            <param name="beta" value="0.2"/>
+            <param name="shutdown_dist" value="0.1" />
+            <param name="publish_frequency" value="50"/>
+        </node> -->
+
+        <!-- <node pkg="obstacle_simulation" type="obs_position" name="obs_position" output="screen">
+        </node> -->
+                <!-- path_Tracker -->
+        <include file="$(find obstacle_simulation)/launch/obstacle_simulation.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+        </include>
+
+        <include file="$(find path_layer)/launch/Rival_Sim.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+        </include>
+
+        <include file="$(find navigation_main)/launch/navigation_main.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+        </include>
+
+        <node pkg="navigation_main" type="goal_topic_converter" name="goal_topic_converter" output="screen">
+        </node>
+
+        <!-- rival traj predict -->
+        <include file="$(find path_layer)/launch/fit_traj_circle.launch">
+            <arg name="robot_name" value="$(arg robot_name)"/>
+        </include>
+
+        <!-- <include file="$(find path_executor)/launch/pathExecutor.launch">
+            <arg name="is_robot1" value="$(arg is_robot1)"/>
+            <arg name="num" value="$(arg num)" />
+            <arg name="is_sim" value="$(arg is_sim)" />
+        </include> -->
+        <!-- <include file="$(find path_tracker)/launch/pathTracker.launch"> -->
+            <!-- sim or run -->
+            <!-- <arg name="is_sim" value="$(arg is_sim)" /> -->
+            <!-- <arg name="is_run" value="$(arg is_run)" /> -->
+
+            <!-- which robot -->
+            <!-- <arg name="is_robot" value="$(arg is_robot)"/> -->
+            <!-- <arg name="is_robot1" value="$(arg is_robot1)" /> -->
+            <!-- <arg name="is_robot2" value="$(arg is_robot2)" /> -->
+            <!-- <arg name="is_rival1" value="$(arg is_rival1)" /> -->
+            <!-- <arg name="is_rival2" value="$(arg is_rival2)" /> -->
+        <!-- </include> -->
+
+        <!-- simulate obstacle -->
+    </group>
+
+    <!-- <include file="$(find obstacle_simulation)/launch/obstacle_simulation.launch" if="$(arg is_sim)"> -->
+    <!-- </include> -->
+    
+</launch>

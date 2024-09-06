@@ -1,0 +1,10 @@
+<launch>
+
+    <arg name="robot_script" default="script10_real_robot1.yaml"/>
+    <!-- <arg name="robot2_script" default="script9_real_robot2.yaml"/> -->
+
+    <!-- <node pkg="script_sim" type="point_to_point" name="point_to_point" args="$(find script_sim)/config/$(arg robot_script) /robot/dock_goal /robot/finishornot" output="screen" /> -->
+    <node pkg="script_sim" type="point_to_point" name="point_to_point" args="$(find script_sim)/config/$(arg robot_script) /robot/move_base_simple/goal /robot/finishornot" output="screen" ns="robot"/>
+    <!-- <node pkg="script_sim" type="point_to_point" name="point_to_point2" args="$(find script_sim)/config/$(arg robot2_script) /robot2/mission /robot2/is_finish" output="screen" /> -->
+
+</launch>

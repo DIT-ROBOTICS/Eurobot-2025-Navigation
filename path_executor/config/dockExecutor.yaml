@@ -1,0 +1,76 @@
+active: true
+control_frequency: 20
+#   ________
+#  /|       \
+# / |        \
+#   %(max:0.5)
+
+# differential
+differential:
+  profile_percent: 0.2
+  linear_max_velocity: 1.0
+  linear_acceleration: 0.5
+  linear_kp: 2
+  linear_kd: 0.02
+  angular_max_velocity: 3
+  angular_min_velocity: 0.08
+  angular_kp: 8
+  fast_angular_max_vel: 4.0
+  fast_angular_kp: 2.3
+  slow_linear_max_velocity: 0.5
+  slow_linear_kp: 1.0
+  slow_linear_acceleration: 0.5
+  linear_min_velocity: 0.15
+
+  point_stop_tolerance: 0.01
+  angle_stop_tolerance: 0.03
+  first_angle_stop_tolerance: 4
+  move_fail_tolerance: 0.2
+  move_over_tolerance: 0.06
+  rival_tolerance: 0.7
+  rival_parallel_tolerance: 0.4
+
+  angular_adjust_kp: 2.3
+  angular_adjust_limit: 0.6
+
+# holonomic
+holonomic:
+  profile_percent: 0.2
+  linear_max_velocity: 0.6
+  linear_acceleration: 1.2
+  linear_kp: 3.5
+  linear_kd: 0.0
+  angular_max_velocity: 3
+  angular_min_velocity: 0.2
+  angular_kp: 4
+  fast_angular_max_vel: 3.0
+  fast_angular_kp: 4.0
+  slow_linear_max_velocity: 0.3
+  slow_linear_kp: 1.0
+  slow_linear_acceleration: 1.0
+  linear_min_velocity: 0.25
+
+  point_stop_tolerance: 0.02
+  angle_stop_tolerance: 0.01
+  first_angle_stop_tolerance: 4
+  move_fail_tolerance: 0.2
+  move_over_tolerance: 0.06
+  rival_tolerance: 0.6
+  rival_parallel_tolerance: 0.4
+
+  angular_adjust_kp: 0.8
+  angular_adjust_limit: 0.1
+  
+# # cake-mode
+# cake_linear_max_velocity: 0.2
+# cake_angular_max_velocity: 1.2
+
+# # cherry-mode
+# cherry_linear_max_velocity: 0.08
+# cherry_angular_max_velocity: 0.05
+
+# # vibrate-mode
+# vibrate_time: 10
+# vibrate_lin_distance: 0.04
+# vibrate_linear_max_velocity: 0.15
+# vibrate_tolerance: 0.01

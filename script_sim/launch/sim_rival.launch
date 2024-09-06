@@ -1,0 +1,9 @@
+<!-- <launch>
+
+    <arg name="rival1_script" default="script6_real_rival1.yaml"/>
+    <arg name="rival2_script" default="script6_real_rival2.yaml"/>
+
+    <node pkg="script_sim" type="point_to_point" name="point_to_point_rival1" args="$(find script_sim)/config/$(arg rival1_script) /rival1/mission /rival1/is_finish" output="screen" />
+    <node pkg="script_sim" type="point_to_point" name="point_to_point_rival2" args="$(find script_sim)/config/$(arg rival2_script) /rival2/mission /rival2/is_finish" output="screen" />
+
+</launch> -->

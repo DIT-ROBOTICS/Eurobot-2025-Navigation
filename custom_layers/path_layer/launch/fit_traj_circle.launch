@@ -1,0 +1,7 @@
+<launch>
+    <arg name="robot_name" default="robot" />
+    <node pkg="path_layer" type="fit_traj_circle.py" name="fit_traj_circle" output="screen">
+        <param name="robot_name" value="$(arg robot_name)"/>
+        <rosparam file="$(find path_layer)/config/fit_traj_circle.yaml" command="load"/> 
+    </node>
+</launch>
