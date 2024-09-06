@@ -1,0 +1,3 @@
+[submodule "eurobot_msgs"]
+	path = eurobot_msgs
+	url = git@github.com:DIT-ROBOTICS/eurobot_msgs.git
