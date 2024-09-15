@@ -11,7 +11,7 @@ services:
 
 
     network_mode: host
-    working_dir: /home/user/Eurobot2024-Navigation-ws
+    working_dir: /home/user/Eurobot2025-Navigation-ws
 
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -20,10 +20,10 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
       - $HOME/.Xauthority:/home/user/.Xauthority
-      - C:/Users/88696/Desktop/summer_time01:/home/user/Eurobot2024-Navigation-ws
+      - D:\Justin\navigation:/home/user/Eurobot2025-Navigation-ws
 
     environment:
-      - DISPLAY=140.114.208.99:0.0
+      - DISPLAY=172.31.96.1:0.0
       - XAUTHORITY=/home/user/.Xauthority
 
     command: /bin/bash

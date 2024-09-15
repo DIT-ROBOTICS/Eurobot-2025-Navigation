@@ -13,6 +13,9 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_srvs/SetBool.h>
 #include <string>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <costmap_2d/costmap_2d_ros.h>
 #include <cmath>
 
 #define _USE_MATH_DEFINES
@@ -35,6 +38,11 @@ class Dock10Executor {
     ros::NodeHandle nh_local_;
     ros::ServiceServer params_srv_;
 
+    // for costmap
+    tf2_ros::Buffer* tf;
+    costmap_2d::Costmap2DROS* costmap_ros;
+    void printCostmap();
+    
     // Subscriber
     ros::Subscriber goal_sub_;
     ros::Subscriber pose_sub_;

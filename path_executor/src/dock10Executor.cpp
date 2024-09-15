@@ -5,6 +5,9 @@ Dock10Executor::Dock10Executor(ros::NodeHandle& nh, ros::NodeHandle& nh_local) {
     std_srvs::Empty empt;
     p_active_ = false;
     params_srv_ = nh_local_.advertiseService("params", &Dock10Executor::initializeParams, this);
+    tf = new tf2_ros::Buffer(ros::Duration(10));
+    tf2_ros::TransformListener tfListener(*tf);
+    costmap_ros = new costmap_2d::Costmap2DROS("costmap", *tf);
     initializeParams(empt.request, empt.response);
     initialize();
 }
@@ -59,6 +62,8 @@ void Dock10Executor::initialize() {
 
     rival_x_ = 0;
     rival_y_ = 0;
+
+    costmap_ros->start();
 }
 
 bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
@@ -196,8 +201,31 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
     // ROS_INFO("%f %f %f", vel_[0], vel_[1], dt_);
 
     // remember the time when leaving this loop
+    // printCostmap();
     t_bef_ = ros::Time::now().toSec();
 }
+
+void Dock10Executor::printCostmap(){
+    costmap_2d::Costmap2D* costmap = costmap_ros->getCostmap();
+    unsigned char* map = costmap->getCharMap();
+    int size_x = costmap->getSizeInCellsX();
+    int size_y = costmap->getSizeInCellsY();
+    for (int i = 0; i < size_y; i++) {
+        for (int j = 0; j < size_x; j++) {
+            if (map[i * size_x + j] == costmap_2d::LETHAL_OBSTACLE) {
+                std::cout << "X";
+            } else if (map[i * size_x + j] == costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
+                std::cout << "I";
+            } else if (map[i * size_x + j] == costmap_2d::FREE_SPACE) {
+                std::cout << " ";
+            } else {
+                std::cout << "U";
+            }
+        }
+        std::cout << std::endl;
+    }
+}
+
 void Dock10Executor::move() {
     if(dist_ <= tolerance_){
         ROS_INFO("[dock10 Executor]: move sucessfully");
