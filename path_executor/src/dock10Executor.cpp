@@ -1,13 +1,11 @@
 #include "dock10Executor.h"
 Dock10Executor::Dock10Executor(ros::NodeHandle& nh, ros::NodeHandle& nh_local) {
+    scan_radius = 20;
     nh_ = nh;
     nh_local_ = nh_local;
     std_srvs::Empty empt;
     p_active_ = false;
     params_srv_ = nh_local_.advertiseService("params", &Dock10Executor::initializeParams, this);
-    tf = new tf2_ros::Buffer(ros::Duration(10));
-    tf2_ros::TransformListener tfListener(*tf);
-    costmap_ros = new costmap_2d::Costmap2DROS("costmap", *tf);
     initializeParams(empt.request, empt.response);
     initialize();
 }
@@ -62,8 +60,6 @@ void Dock10Executor::initialize() {
 
     rival_x_ = 0;
     rival_y_ = 0;
-
-    costmap_ros->start();
 }
 
 bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
@@ -117,6 +113,7 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
             pub_ = nh_.advertise<geometry_msgs::Twist>("dock_exec_cmd_vel", 1);
             goalreachedPub_ = nh_.advertise<std_msgs::Char>("dock_exec_status", 1);
             fast_mode_client = nh_.serviceClient<std_srvs::SetBool>("fast_spin");
+            map_sub_ = nh_.subscribe("/robot/move_base/global_costmap/costmap", 20, &Dock10Executor::costmapCB, this);
         } else {
             goal_sub_.shutdown();
             pose_sub_.shutdown();
@@ -184,6 +181,8 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             case MODE::MOVE: {
                 // ROS_INFO_STREAM("start move");
                 move();
+                findSquardCost(pose_[0],pose_[1]);
+                printSquardCost();
                 break;
             }
             case MODE::ROTATE: {
@@ -191,6 +190,10 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                 break;
             }
             case MODE::IDLE: {
+                findSquardCost(pose_[0],pose_[1]);
+                if(needEscape()){
+                    escape();
+                }
                 break;
             }
         }
@@ -205,26 +208,6 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
     t_bef_ = ros::Time::now().toSec();
 }
 
-void Dock10Executor::printCostmap(){
-    costmap_2d::Costmap2D* costmap = costmap_ros->getCostmap();
-    unsigned char* map = costmap->getCharMap();
-    int size_x = costmap->getSizeInCellsX();
-    int size_y = costmap->getSizeInCellsY();
-    for (int i = 0; i < size_y; i++) {
-        for (int j = 0; j < size_x; j++) {
-            if (map[i * size_x + j] == costmap_2d::LETHAL_OBSTACLE) {
-                std::cout << "X";
-            } else if (map[i * size_x + j] == costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-                std::cout << "I";
-            } else if (map[i * size_x + j] == costmap_2d::FREE_SPACE) {
-                std::cout << " ";
-            } else {
-                std::cout << "U";
-            }
-        }
-        std::cout << std::endl;
-    }
-}
 
 void Dock10Executor::move() {
     if(dist_ <= tolerance_){
@@ -371,6 +354,8 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
 
 
     dist_ = distance(pose_[0], pose_[1], goal_[0], goal_[1]);
+    double cost_of_goal = findOneGridCost(goal_[0],goal_[1]);
+    ROS_WARN("cost of goal:%f",cost_of_goal);
     ang_diff_ = goal_[2] - pose_[2];
     first_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0])) - pose_[2];
 
@@ -396,6 +381,78 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     t_bef_ = ros::Time::now().toSec();
 }
 
+void Dock10Executor::costmapCB(const nav_msgs::OccupancyGrid& data) {
+    map_data = data;
+    // for(int i = 0;i<data.info.width;i++){
+    //     for(int j = 0;j<data.info.height;j++){
+    //         ROS_INFO("(%d,%d):%d",i,j,map_data.data[i*data.info.width+j]);
+    //     }
+    // }
+    return;
+}
+double Dock10Executor::findOneGridCost(double x, double y){
+    int mapX = x * 100;
+    int mapY = y * 100;
+    int index_cost = (mapY -1) * 300 + mapX;
+    ROS_INFO("cost of grid[%d][%d]:%d, index:%d",mapX,mapY,map_data.data[index_cost],index_cost);
+    return map_data.data[index_cost];   
+}
+void Dock10Executor::findSquardCost(double center_x, double center_y){
+    int mapX = center_x * 100;
+    int mapY = center_y * 100;
+    for(int i = 0;i<scan_radius;i++){
+        for(int j = 0;j<scan_radius;j++){
+            int index_cost = (mapY - scan_radius/2 + i -1) * 300 + mapX - scan_radius/2 + j;
+            scanSquard[i][j] = map_data.data[index_cost];
+        }
+    }
+}
+bool Dock10Executor::needEscape(){
+    
+    bool need_escape = false;
+    for(int i = 0;i<scan_radius;i++){
+        for(int j = 0;j<scan_radius;j++){
+            if(scanSquard[i][j] > 0){
+                need_escape = true;
+            }
+            else {
+                need_escape = false;
+                return need_escape;
+            }
+        }
+    }
+    ROS_WARN("need escape");
+    return need_escape;
+}
+void Dock10Executor::printSquardCost(){
+    for(int i = 0;i<scan_radius;i++){
+        for(int j = 0;j<scan_radius;j++){
+            std::cout << scanSquard[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
+void Dock10Executor::escape(){
+    int mapX = pose_[0] * 100;
+    int mapY = pose_[1] * 100;
+    ROS_INFO("escaping");
+    int min_cost = 100;
+    int x,y;
+    for(int i = 0;i<scan_radius;i++){
+        for(int j = 0;j<scan_radius;j++){
+            if(scanSquard[i][j] < min_cost){
+                min_cost = scanSquard[i][j];
+                x = i;
+                y = j;
+            }
+        }
+    }
+    goal_[0] = pose_[0] + (x - scan_radius/2) * 0.01;
+    goal_[1] = pose_[1] + (y - scan_radius/2) * 0.01;
+    mode_ = MODE::MOVE;
+}
+
 void Dock10Executor::poseCB_Odometry(const nav_msgs::Odometry& data) {
     pose_[0] = data.pose.pose.position.x;
     pose_[1] = data.pose.pose.position.y;
@@ -405,8 +462,6 @@ void Dock10Executor::poseCB_Odometry(const nav_msgs::Odometry& data) {
     double _, yaw;
     qt.getRPY(_, _, yaw);
     pose_[2] = yaw;
-
-    
 }
 
 void Dock10Executor::poseCB_PoseWithCovarianceStamped(const geometry_msgs::PoseWithCovarianceStamped& data) {
