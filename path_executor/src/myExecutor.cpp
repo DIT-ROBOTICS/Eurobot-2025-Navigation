@@ -107,7 +107,7 @@ void MyExecutor::goalCB(const geometry_msgs::PoseStamped& data){
 
     vel[0] = vel[1] = vel[2] = 0.0;
     if (data.pose.position.x == -1 && data.pose.position.y == -1) {
-        ROS_INFO("[Dock Executor]: Mission Abort!");
+        ROS_INFO("[My Executor]: Mission Abort!");
         cur_mode = MODE::IDLE;
         return;
     }
