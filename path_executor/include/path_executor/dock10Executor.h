@@ -12,10 +12,9 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_srvs/SetBool.h>
-#include <string>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <costmap_2d/costmap_2d_ros.h>
+#include <string>
 #include <cmath>
 
 #define _USE_MATH_DEFINES
@@ -24,6 +23,7 @@ enum class MODE {
     MOVE = 0,
     ROTATE,
     IDLE,
+    ESCAPE,
 };
 
 class Dock10Executor {
@@ -38,25 +38,34 @@ class Dock10Executor {
     ros::NodeHandle nh_local_;
     ros::ServiceServer params_srv_;
 
-    // for costmap
-    tf2_ros::Buffer* tf;
-    costmap_2d::Costmap2DROS* costmap_ros;
-    void printCostmap();
     
     // Subscriber
     ros::Subscriber goal_sub_;
     ros::Subscriber pose_sub_;
     ros::Subscriber rival_sub_;
+    ros::Subscriber map_sub_;
+    ros::Subscriber costmap_sub_;
+    costmap_2d::Costmap2D* costmap_;
     // ros::Subscriber rival2_sub_;
     void goalCB(const geometry_msgs::PoseStamped& data);
     void poseCB_Odometry(const nav_msgs::Odometry& data);
     void poseCB_PoseWithCovarianceStamped(const geometry_msgs::PoseWithCovarianceStamped& data);
     void rivalCB_Odometry(const nav_msgs::Odometry& data);
-
+    void costmapCB(const nav_msgs::OccupancyGrid& data);
     // Publisher
     ros::Publisher pub_;
     ros::Publisher goalreachedPub_;
     void velocityPUB();
+
+    // for escape operation
+    nav_msgs::OccupancyGrid map_data;
+    int scan_radius;
+    int scanSquard[20][20];
+    double findOneGridCost(double x, double y);
+    void findSquardCost(double center_x, double center_y);
+    bool needEscape();
+    void printSquardCost();
+    void escape();
     
     // Server
     ros::ServiceClient fast_mode_client;
