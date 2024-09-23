@@ -182,6 +182,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                 // ROS_INFO_STREAM("start move");
                 move();
                 findSquardCost(pose_[0],pose_[1]);
+                if(needEscape()) escape();
                 printSquardCost();
                 break;
             }
@@ -191,9 +192,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             }
             case MODE::IDLE: {
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()){
-                    escape();
-                }
+                if(needEscape()) escape();
                 break;
             }
         }
@@ -408,10 +407,11 @@ void Dock10Executor::findSquardCost(double center_x, double center_y){
     }
 }
 bool Dock10Executor::needEscape(){
-    
     bool need_escape = false;
     for(int i = 0;i<scan_radius;i++){
         for(int j = 0;j<scan_radius;j++){
+            if(scanSquard[i][j] < 0) continue;
+
             if(scanSquard[i][j] > 0){
                 need_escape = true;
             }
@@ -426,11 +426,24 @@ bool Dock10Executor::needEscape(){
 }
 void Dock10Executor::printSquardCost(){
     for(int i = 0;i<scan_radius;i++){
-        for(int j = 0;j<scan_radius;j++){
+        for(int j = scan_radius;j>=0;j--){
             std::cout << scanSquard[i][j] << " ";
         }
         std::cout << std::endl;
     }
+}
+
+std::pair<double, double> Dock10Executor::coordinateAvailable(double x, double y){
+    int mapX = pose_[0] * 100 + (x - scan_radius/2);
+    int mapY = pose_[1] * 100 + (y - scan_radius/2);
+    
+    if(mapX < 0) mapX = 0;
+    else if(mapX > 400) mapX = 400;
+
+    if(mapY < 0) mapY = 0;
+    else if(mapY > 300) mapY = 300;
+
+    return std::pair<double, double>(mapX / 100, mapY / 100);
 }
 
 void Dock10Executor::escape(){
@@ -441,16 +454,20 @@ void Dock10Executor::escape(){
     int x,y;
     for(int i = 0;i<scan_radius;i++){
         for(int j = 0;j<scan_radius;j++){
-            if(scanSquard[i][j] < min_cost){
+            if(scanSquard[i][j] < min_cost && scanSquard[i][j] >= 0){
                 min_cost = scanSquard[i][j];
                 x = i;
                 y = j;
             }
         }
     }
-    goal_[0] = pose_[0] + (x - scan_radius/2) * 0.01;
-    goal_[1] = pose_[1] + (y - scan_radius/2) * 0.01;
+    std::pair<double, double> coordinate = coordinateAvailable(x,y);
+    double goal_x = goal_[0] + (x - scan_radius/2) * 0.01;
+    double goal_y = goal_[1] + (y - scan_radius/2) * 0.01;
+    goal_[0] = goal_x;
+    goal_[1] = goal_y;
     mode_ = MODE::MOVE;
+
 }
 
 void Dock10Executor::poseCB_Odometry(const nav_msgs::Odometry& data) {
