@@ -9,7 +9,7 @@ control_frequency: 20
 differential:
   profile_percent: 0.2
   linear_max_velocity: 1.0
-  linear_acceleration: 0.5
+  linear_acceleration: 0.2
   linear_kp: 2
   linear_kd: 0.02
   angular_max_velocity: 3
@@ -33,12 +33,17 @@ differential:
   angular_adjust_kp: 2.3
   angular_adjust_limit: 0.6
 
+  # front_check
+  
+  front_check_dx: 0.005
+  front_check_dist: 0.1 
+
 # holonomic
 holonomic:
   profile_percent: 0.2
-  linear_max_velocity: 0.6
-  linear_acceleration: 1.2
-  linear_kp: 3.5
+  linear_max_velocity: 2
+  linear_acceleration: 0.25
+  linear_kp: 0.5
   linear_kd: 0.0
   angular_max_velocity: 3
   angular_min_velocity: 0.2
@@ -61,6 +66,15 @@ holonomic:
   angular_adjust_kp: 0.8
   angular_adjust_limit: 0.1
   
+  # front_check
+  
+  front_check_d: 0.005
+  front_check_dist: 0.15
+  
+  
+
+
+
 # # cake-mode
 # cake_linear_max_velocity: 0.2
 # cake_angular_max_velocity: 1.2
