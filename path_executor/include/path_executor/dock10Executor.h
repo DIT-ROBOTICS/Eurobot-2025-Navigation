@@ -66,7 +66,7 @@ class Dock10Executor {
     bool needEscape();
     void printSquardCost();
     void escape();
-    std::pair<double, double> coordinateAvailable(double x, double y);
+    bool coordinateAvailable(double x, double y);
     // Server
     ros::ServiceClient fast_mode_client;
 
