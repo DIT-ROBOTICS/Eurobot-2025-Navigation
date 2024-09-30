@@ -186,9 +186,9 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                     ROS_INFO("Start Escape From MOVE State");
                     escape();
                     ROS_INFO("End Escape From MOVE State");
-                    goal_[0] = original_goal_[0];
-                    goal_[1] = original_goal_[1];
-                    goal_[2] = original_goal_[2];
+                    // goal_[0] = original_goal[0];
+                    // goal_[1] = original_goal[1];
+                    // goal_[2] = original_goal[2];
                 }
                 printSquardCost();
                 break;
@@ -203,9 +203,9 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                     ROS_INFO("Start Escape From IDLE State");
                     escape();
                     ROS_INFO("End Escape From IDLE State");
-                    goal_[0] = original_goal_[0];
-                    goal_[1] = original_goal_[1];
-                    goal_[2] = original_goal_[2];
+                    // goal_[0] = original_goal[0];
+                    // goal_[1] = original_goal[1];
+                    // goal_[2] = original_goal[2];
                 }
                 break;
             }
@@ -423,13 +423,14 @@ void Dock10Executor::findSquardCost(double center_x, double center_y){
     }
 }
 
-bool Dock10Executor::needEscape(int mapX, int mapY){
+bool Dock10Executor::needEscape(){
     bool need_escape = false;
     for(int i = 0;i<scan_radius;i++){
         // first row
         for(int j = 0;j<scan_radius;j++){
             if(scanSquard[i][j] > 0) need_escape = true;
             else{
+                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
@@ -439,6 +440,7 @@ bool Dock10Executor::needEscape(int mapX, int mapY){
         {
             if(scanSquard[scan_radius - i - 1][j] > 0) need_escape = true;
             else{
+                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
@@ -448,6 +450,7 @@ bool Dock10Executor::needEscape(int mapX, int mapY){
         {
             if(scanSquard[j][i] > 0) need_escape = true;
             else{
+                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
@@ -457,6 +460,7 @@ bool Dock10Executor::needEscape(int mapX, int mapY){
         {
             if(scanSquard[j][scan_radius - i - 1] > 0) need_escape = true;
             else{
+                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
@@ -468,8 +472,8 @@ bool Dock10Executor::needEscape(int mapX, int mapY){
 }
 
 void Dock10Executor::printSquardCost(){
-    for(int i = 0;i<scan_radius;i++){
-        for(int j = scan_radius;j>=0;j--){
+    for(int i = scan_radius-1;i>=0;i--){
+        for(int j = 0;j<scan_radius;j++){
             std::cout << scanSquard[i][j] << " ";
         }
         std::cout << std::endl;
@@ -489,71 +493,65 @@ bool Dock10Executor::coordinateAvailable(double x, double y){
     return true;
 }
 
-void Dock10Executor::escape(int mapX, int mapY){
-    int mapX = pose_[0] * 100;
-    int mapY = pose_[1] * 100;
+void Dock10Executor::escape(){
     ROS_INFO("escaping");
     int min_cost = 100;
-    int x,y;
-    bool findRoute = false;
+    int x = scan_radius/2;
+    int y = scan_radius/2;
+    bool findRoote = false;
     for(int i = 0;i<scan_radius;i++){
         // first row
-        for(int j = 0;j<scan_radius;j++){
-            if(scanSquard[i][j] == 0) {
-                findRoute = true;
-                x = i;
-                y = j;
-                break;
-            }
-            else findRoute = false;
-        }
-        if(findRoute) break;
-
-        // last row
         for (int j = 0; j < scan_radius; j++)
         {
-            if(scanSquard[scan_radius - i - 1][j] == 0) {
-                findRoute = true;
+            if(scanSquard[scan_radius - i - 1][j] >= 0 && scanSquard[scan_radius - i - 1][j] < min_cost && coordinateAvailable(scan_radius - i - 1,j)) {
                 x = scan_radius - i - 1;
                 y = j;
-                break;
+                min_cost = scanSquard[scan_radius - i - 1][j];
+                findRoote = true;
             }
-            else findRoute = false;
         }
-        if(findRoute) break;
+
+        // last row
+        for(int j = 0;j<scan_radius;j++){
+            if(scanSquard[i][j] >= 0 && scanSquard[i][j] < min_cost && coordinateAvailable(i,j)) {
+                x = i;
+                y = j;
+                min_cost = scanSquard[i][j];
+                findRoote = true;
+            }
+        }
 
         // first column
         for (int j = 0; j < scan_radius; j++)
         {
-            if(scanSquard[j][i] == 0) {
-                findRoute = true;
+            if(scanSquard[j][i] >= 0 && scanSquard[j][i] < min_cost && coordinateAvailable(j,i)) {
                 x = j;
                 y = i;
-                break;
+                min_cost = scanSquard[j][i];
+                findRoote = true;
             }
-            else findRoute = false;
         }
-        if(findRoute) break;
 
         // last column
         for (int j = 0; j < scan_radius; j++)
         {
-            if (scanSquard[j][scan_radius - i - 1] == 0) {
-                findRoute = true;
+            if (scanSquard[j][scan_radius - i - 1] >= 0&& scanSquard[j][scan_radius - i - 1] < min_cost && coordinateAvailable(j,scan_radius - i - 1)) {
                 x = j;
                 y = scan_radius - i - 1;
-                break;
+                min_cost = scanSquard[j][scan_radius - i - 1];
+                findRoote = true;
             }
-            else findRoute = false;
         }
-        if(findRoute) break;
     }
-    
+    if(!findRoote){
+        ROS_WARN("No way to escape");
+        return;
+    }
     double goal_x = pose_[0] + (x - scan_radius/2) * 0.01;
     double goal_y = pose_[1] + (y - scan_radius/2) * 0.01;
-    original_goal_[0] = goal_[0];
-    original_goal_[1] = goal_[1];
-    original_goal_[2] = goal_[2];
+    original_goal[0] = goal_[0];
+    original_goal[1] = goal_[1];
+    original_goal[2] = goal_[2];
 
     goal_[0] = goal_x;
     goal_[1] = goal_y;
