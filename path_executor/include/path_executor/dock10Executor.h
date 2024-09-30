@@ -67,6 +67,7 @@ class Dock10Executor {
     bool needEscape();
     void printSquardCost();
     void escape();
+    void StrongEscape();
     bool coordinateAvailable(double x, double y);
     // Server
     ros::ServiceClient fast_mode_client;

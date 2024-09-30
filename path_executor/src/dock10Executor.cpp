@@ -425,49 +425,63 @@ void Dock10Executor::findSquardCost(double center_x, double center_y){
 
 bool Dock10Executor::needEscape(){
     bool need_escape = false;
-    for(int i = 0;i<scan_radius;i++){
+    for(int i = 5;i<scan_radius;i++){
+        int index = scan_radius/2 - i -1;
         // first row
-        for(int j = 0;j<scan_radius;j++){
-            if(scanSquard[i][j] > 0) need_escape = true;
+        std::cout << "checking first row" << "\n";
+        for(int j = 0;j<i;j++){
+            std::cout << scanSquard[index][j] << " ";
+            if(scanSquard[index][j] > 0) need_escape = true;
             else{
                 // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
+        std::cout << "\n";
+        std::cout << "checking last row" << "\n";
         // last row
-        for (int j = 0; j < scan_radius; j++)
+        for (int j = 0; j < i; j++)
         {
-            if(scanSquard[scan_radius - i - 1][j] > 0) need_escape = true;
+            std::cout << scanSquard[scan_radius - index - 1][j] << " ";
+            if(scanSquard[scan_radius - index - 1][j] > 0) need_escape = true;
             else{
                 // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
+        std::cout << "\n";
+        std::cout << "checking first column" << "\n";
         // first column
-        for (int j = 0; j < scan_radius; j++)
+        for (int j = 0; j < i; j++)
         {
-            if(scanSquard[j][i] > 0) need_escape = true;
+            std::cout << scanSquard[j][index] <<" ";
+            if(scanSquard[j][index] > 0) need_escape = true;
             else{
                 // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
+        std::cout << "\n";
+        std::cout << "checking last column" << "\n";
         // last column
-        for (int j = 0; j < scan_radius; j++)
+        for (int j = 0; j < i; j++)
         {
-            if(scanSquard[j][scan_radius - i - 1] > 0) need_escape = true;
+            std::cout << scanSquard[j][scan_radius - index - 1] << " ";
+            if(scanSquard[j][scan_radius - index - 1] > 0) need_escape = true;
             else{
                 // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
-        return need_escape;
+        std::cout << "\n";
+        if(need_escape) break;
     }
-    ROS_WARN("need escape");
+    
+    ROS_WARN("Need escape");
     return need_escape;
 }
 
@@ -476,7 +490,7 @@ void Dock10Executor::printSquardCost(){
         for(int j = 0;j<scan_radius;j++){
             std::cout << scanSquard[i][j] << " ";
         }
-        std::cout << std::endl;
+        std::cout << "\n";
     }
 }
 
@@ -484,11 +498,11 @@ bool Dock10Executor::coordinateAvailable(double x, double y){
     int mapX = pose_[0] * 100 + (x - scan_radius/2);
     int mapY = pose_[1] * 100 + (y - scan_radius/2);
     
-    if(mapX < 0) return false;
-    else if(mapX > 300) return false;
+    if(mapX < 50) return false;
+    else if(mapX > 250) return false;
 
-    if(mapY < 0) return false;
-    else if(mapY > 200) return false;
+    if(mapY < 50) return false;
+    else if(mapY > 150) return false;
 
     return true;
 }
@@ -500,51 +514,54 @@ void Dock10Executor::escape(){
     int y = scan_radius/2;
     bool findRoote = false;
     for(int i = 0;i<scan_radius;i++){
+        int index = scan_radius/2 - i -1;
         // first row
-        for (int j = 0; j < scan_radius; j++)
+        for (int j = 0; j < i; j++)
         {
-            if(scanSquard[scan_radius - i - 1][j] >= 0 && scanSquard[scan_radius - i - 1][j] < min_cost && coordinateAvailable(scan_radius - i - 1,j)) {
-                x = scan_radius - i - 1;
+            if(scanSquard[scan_radius - index - 1][j] >= 0 && scanSquard[scan_radius - index - 1][j] < min_cost && coordinateAvailable(scan_radius - index - 1,j)) {
+                x = scan_radius - index - 1;
                 y = j;
-                min_cost = scanSquard[scan_radius - i - 1][j];
+                min_cost = scanSquard[scan_radius - index - 1][j];
                 findRoote = true;
             }
         }
 
         // last row
-        for(int j = 0;j<scan_radius;j++){
-            if(scanSquard[i][j] >= 0 && scanSquard[i][j] < min_cost && coordinateAvailable(i,j)) {
-                x = i;
+        for(int j = 0;j < i;j++){
+            if(scanSquard[index][j] >= 0 && scanSquard[index][j] < min_cost && coordinateAvailable(index,j)) {
+                x = index;
                 y = j;
-                min_cost = scanSquard[i][j];
+                min_cost = scanSquard[index][j];
                 findRoote = true;
             }
         }
 
         // first column
-        for (int j = 0; j < scan_radius; j++)
+        for (int j = 0; j < i; j++)
         {
-            if(scanSquard[j][i] >= 0 && scanSquard[j][i] < min_cost && coordinateAvailable(j,i)) {
+            if(scanSquard[j][index] >= 0 && scanSquard[j][index] < min_cost && coordinateAvailable(j,index)) {
                 x = j;
-                y = i;
-                min_cost = scanSquard[j][i];
+                y = index;
+                min_cost = scanSquard[j][index];
                 findRoote = true;
             }
         }
 
         // last column
-        for (int j = 0; j < scan_radius; j++)
+        for (int j = 0; j < i; j++)
         {
-            if (scanSquard[j][scan_radius - i - 1] >= 0&& scanSquard[j][scan_radius - i - 1] < min_cost && coordinateAvailable(j,scan_radius - i - 1)) {
+            if (scanSquard[j][scan_radius - index - 1] >= 0&& scanSquard[j][scan_radius - index - 1] < min_cost && coordinateAvailable(j,scan_radius - index - 1)) {
                 x = j;
-                y = scan_radius - i - 1;
-                min_cost = scanSquard[j][scan_radius - i - 1];
+                y = scan_radius - index - 1;
+                min_cost = scanSquard[j][scan_radius - index - 1];
                 findRoote = true;
             }
         }
+        if(findRoote) break;
     }
     if(!findRoote){
         ROS_WARN("No way to escape");
+        StrongEscape();
         return;
     }
     double goal_x = pose_[0] + (x - scan_radius/2) * 0.01;
@@ -555,6 +572,24 @@ void Dock10Executor::escape(){
 
     goal_[0] = goal_x;
     goal_[1] = goal_y;
+    mode_ = MODE::MOVE;
+}
+
+void Dock10Executor::StrongEscape(){
+    int x = pose_[0] * 100;
+    int y = pose_[1] * 100;
+    int dx[4] = {-10,10,10,-10};
+    int dy[4] = {-10,-10,10,10};
+    int state = 0;
+    ROS_INFO("Strong Escape x:%d y:%d",x, y,state);
+    if(x > 150 && y > 100) state = 0; //first
+    else if(x < 150 && y > 100) state = 1; //second
+    else if(x < 150 && y < 100) state = 2; //third
+    else if(x > 150 && y < 100) state = 3; //fourth
+
+    ROS_INFO("Strong Escape State:%d",state);
+    goal_[0] = pose_[0] + dx[state] * 0.01;
+    goal_[1] = pose_[1] + dy[state] * 0.01;
     mode_ = MODE::MOVE;
 }
 
