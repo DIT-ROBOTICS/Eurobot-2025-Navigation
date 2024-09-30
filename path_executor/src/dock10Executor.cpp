@@ -1,7 +1,6 @@
 #include "dock10Executor.h"
 Dock10Executor::Dock10Executor(ros::NodeHandle& nh, ros::NodeHandle& nh_local) {
-    scan_radius = 1;
-    max_scan_radius = 20;
+    scan_radius = 20;
     nh_ = nh;
     nh_local_ = nh_local;
     std_srvs::Empty empt;
@@ -393,15 +392,6 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     dacc_start_ = false;
     debounce_ang = 0;
     t_bef_ = ros::Time::now().toSec();
-}
-
-void Dock10Executor::scan_radius_Control(){
-    if(scan_radius < max_scan_radius){
-        scan_radius++;
-    }
-    else{
-        scan_radius = 1;
-    }
 }
 
 void Dock10Executor::costmapCB(const nav_msgs::OccupancyGrid& data) {
