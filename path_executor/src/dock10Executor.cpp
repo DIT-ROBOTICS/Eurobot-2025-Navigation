@@ -1,6 +1,7 @@
 #include "dock10Executor.h"
 Dock10Executor::Dock10Executor(ros::NodeHandle& nh, ros::NodeHandle& nh_local) {
-    scan_radius = 20;
+    scan_radius = 1;
+    max_scan_radius = 20;
     nh_ = nh;
     nh_local_ = nh_local;
     std_srvs::Empty empt;
@@ -182,7 +183,14 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                 // ROS_INFO_STREAM("start move");
                 move();
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()) escape();
+                if(needEscape()) {
+                    ROS_INFO("Start Escape From MOVE State");
+                    escape();
+                    ROS_INFO("End Escape From MOVE State");
+                    goal_[0] = original_goal_[0];
+                    goal_[1] = original_goal_[1];
+                    goal_[2] = original_goal_[2];
+                }
                 printSquardCost();
                 break;
             }
@@ -192,7 +200,14 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             }
             case MODE::IDLE: {
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()) escape();
+                if(needEscape()) {
+                    ROS_INFO("Start Escape From IDLE State");
+                    escape();
+                    ROS_INFO("End Escape From IDLE State");
+                    goal_[0] = original_goal_[0];
+                    goal_[1] = original_goal_[1];
+                    goal_[2] = original_goal_[2];
+                }
                 break;
             }
         }
@@ -380,6 +395,15 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     t_bef_ = ros::Time::now().toSec();
 }
 
+void Dock10Executor::scan_radius_Control(){
+    if(scan_radius < max_scan_radius){
+        scan_radius++;
+    }
+    else{
+        scan_radius = 1;
+    }
+}
+
 void Dock10Executor::costmapCB(const nav_msgs::OccupancyGrid& data) {
     map_data = data;
     // for(int i = 0;i<data.info.width;i++){
@@ -389,6 +413,7 @@ void Dock10Executor::costmapCB(const nav_msgs::OccupancyGrid& data) {
     // }
     return;
 }
+
 double Dock10Executor::findOneGridCost(double x, double y){
     int mapX = x * 100;
     int mapY = y * 100;
@@ -396,6 +421,7 @@ double Dock10Executor::findOneGridCost(double x, double y){
     ROS_INFO("cost of grid[%d][%d]:%d, index:%d",mapX,mapY,map_data.data[index_cost],index_cost);
     return map_data.data[index_cost];   
 }
+
 void Dock10Executor::findSquardCost(double center_x, double center_y){
     int mapX = center_x * 100;
     int mapY = center_y * 100;
@@ -406,24 +432,51 @@ void Dock10Executor::findSquardCost(double center_x, double center_y){
         }
     }
 }
-bool Dock10Executor::needEscape(){
+
+bool Dock10Executor::needEscape(int mapX, int mapY){
     bool need_escape = false;
     for(int i = 0;i<scan_radius;i++){
+        // first row
         for(int j = 0;j<scan_radius;j++){
-            if(scanSquard[i][j] < 0) continue;
-
-            if(scanSquard[i][j] > 0){
-                need_escape = true;
-            }
-            else {
+            if(scanSquard[i][j] > 0) need_escape = true;
+            else{
                 need_escape = false;
                 return need_escape;
             }
         }
+        // last row
+        for (int j = 0; j < scan_radius; j++)
+        {
+            if(scanSquard[scan_radius - i - 1][j] > 0) need_escape = true;
+            else{
+                need_escape = false;
+                return need_escape;
+            }
+        }
+        // first column
+        for (int j = 0; j < scan_radius; j++)
+        {
+            if(scanSquard[j][i] > 0) need_escape = true;
+            else{
+                need_escape = false;
+                return need_escape;
+            }
+        }
+        // last column
+        for (int j = 0; j < scan_radius; j++)
+        {
+            if(scanSquard[j][scan_radius - i - 1] > 0) need_escape = true;
+            else{
+                need_escape = false;
+                return need_escape;
+            }
+        }
+        return need_escape;
     }
     ROS_WARN("need escape");
     return need_escape;
 }
+
 void Dock10Executor::printSquardCost(){
     for(int i = 0;i<scan_radius;i++){
         for(int j = scan_radius;j>=0;j--){
@@ -433,41 +486,88 @@ void Dock10Executor::printSquardCost(){
     }
 }
 
-std::pair<double, double> Dock10Executor::coordinateAvailable(double x, double y){
+bool Dock10Executor::coordinateAvailable(double x, double y){
     int mapX = pose_[0] * 100 + (x - scan_radius/2);
     int mapY = pose_[1] * 100 + (y - scan_radius/2);
     
-    if(mapX < 0) mapX = 0;
-    else if(mapX > 400) mapX = 400;
+    if(mapX < 0) return false;
+    else if(mapX > 300) return false;
 
-    if(mapY < 0) mapY = 0;
-    else if(mapY > 300) mapY = 300;
+    if(mapY < 0) return false;
+    else if(mapY > 200) return false;
 
-    return std::pair<double, double>(mapX / 100, mapY / 100);
+    return true;
 }
 
-void Dock10Executor::escape(){
+void Dock10Executor::escape(int mapX, int mapY){
     int mapX = pose_[0] * 100;
     int mapY = pose_[1] * 100;
     ROS_INFO("escaping");
     int min_cost = 100;
     int x,y;
+    bool findRoute = false;
     for(int i = 0;i<scan_radius;i++){
+        // first row
         for(int j = 0;j<scan_radius;j++){
-            if(scanSquard[i][j] < min_cost && scanSquard[i][j] >= 0){
-                min_cost = scanSquard[i][j];
+            if(scanSquard[i][j] == 0) {
+                findRoute = true;
                 x = i;
                 y = j;
+                break;
             }
+            else findRoute = false;
         }
+        if(findRoute) break;
+
+        // last row
+        for (int j = 0; j < scan_radius; j++)
+        {
+            if(scanSquard[scan_radius - i - 1][j] == 0) {
+                findRoute = true;
+                x = scan_radius - i - 1;
+                y = j;
+                break;
+            }
+            else findRoute = false;
+        }
+        if(findRoute) break;
+
+        // first column
+        for (int j = 0; j < scan_radius; j++)
+        {
+            if(scanSquard[j][i] == 0) {
+                findRoute = true;
+                x = j;
+                y = i;
+                break;
+            }
+            else findRoute = false;
+        }
+        if(findRoute) break;
+
+        // last column
+        for (int j = 0; j < scan_radius; j++)
+        {
+            if (scanSquard[j][scan_radius - i - 1] == 0) {
+                findRoute = true;
+                x = j;
+                y = scan_radius - i - 1;
+                break;
+            }
+            else findRoute = false;
+        }
+        if(findRoute) break;
     }
-    std::pair<double, double> coordinate = coordinateAvailable(x,y);
-    double goal_x = goal_[0] + (x - scan_radius/2) * 0.01;
-    double goal_y = goal_[1] + (y - scan_radius/2) * 0.01;
+    
+    double goal_x = pose_[0] + (x - scan_radius/2) * 0.01;
+    double goal_y = pose_[1] + (y - scan_radius/2) * 0.01;
+    original_goal_[0] = goal_[0];
+    original_goal_[1] = goal_[1];
+    original_goal_[2] = goal_[2];
+
     goal_[0] = goal_x;
     goal_[1] = goal_y;
     mode_ = MODE::MOVE;
-
 }
 
 void Dock10Executor::poseCB_Odometry(const nav_msgs::Odometry& data) {

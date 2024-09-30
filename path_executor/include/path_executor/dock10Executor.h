@@ -60,8 +60,11 @@ class Dock10Executor {
     // for escape operation
     nav_msgs::OccupancyGrid map_data;
     int scan_radius;
+    int max_scan_radius;
+    double original_goal[3];
     int scanSquard[20][20];
     double findOneGridCost(double x, double y);
+    void scan_radius_Control();
     void findSquardCost(double center_x, double center_y);
     bool needEscape();
     void printSquardCost();
