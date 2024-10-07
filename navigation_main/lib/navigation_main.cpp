@@ -100,7 +100,7 @@ void Navigation_Main::goalCB() {
     }
     else if (mission_type_ == 10) {
         goal_msg_.header.frame_id = "dock10";
-        ROS_INFO("im here");
+        ROS_INFO("i m here");
         mission_status_ = MISSION_TYPE::DOCK10_EXEC;
         cur_timeout_ = param_dock_timeout_;
         dock10_exec_goal_pub_.publish(goal_msg_);

@@ -138,6 +138,7 @@ include_directories(
 add_executable(pathExecutor src/pathExecutor.cpp)
 add_executable(dockExecutor src/dockExecutor.cpp)
 add_executable(dock10Executor src/dock10Executor.cpp)
+add_executable(myExecutor src/myExecutor.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -165,6 +166,11 @@ target_link_libraries(
 
 target_link_libraries(
   dock10Executor
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(
+  myExecutor
   ${catkin_LIBRARIES}
 )
 

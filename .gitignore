@@ -1,5 +1,6 @@
 .vscode
 build
 devel
+docker
 .catkin_workspace
 docker/compose-development.yml
