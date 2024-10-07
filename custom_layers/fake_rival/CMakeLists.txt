@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(path_executor)
+project(fake_rival)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,15 +8,15 @@ project(path_executor)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  costmap_2d
   geometry_msgs
+  nav_msgs
   roscpp
-  rospy
-  std_msgs
-  costmap_converter
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -71,7 +71,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   std_msgs
+#   geometry_msgs#   nav_msgs
 # )
 
 ################################################
@@ -104,9 +104,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
- INCLUDE_DIRS include
- LIBRARIES path_executor
- CATKIN_DEPENDS geometry_msgs roscpp rospy std_msgs costmap_converter
+#  INCLUDE_DIRS include
+#  LIBRARIES fake_rival
+#  CATKIN_DEPENDS costmap_2d geometry_msgs nav_msgs roscpp
 #  DEPENDS system_lib
 )
 
@@ -117,14 +117,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include/${PROJECT_NAME}/
+# include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/path_executor.cpp
-# )
+add_library(${PROJECT_NAME}
+  src/fake_rival_main.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -134,9 +134,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/path_executor_node.cpp)
-add_executable(pathExecutor src/pathExecutor.cpp)
-add_executable(dockExecutor src/dockExecutor.cpp)
+add_executable(fake_rival_main src/fake_rival_main.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,16 +147,7 @@ add_executable(dockExecutor src/dockExecutor.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
-target_link_libraries(
-  pathExecutor
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(
-  dockExecutor
+target_link_libraries(fake_rival_main
   ${catkin_LIBRARIES}
 )
 
@@ -209,7 +198,7 @@ target_link_libraries(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_path_executor.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_fake_rival.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

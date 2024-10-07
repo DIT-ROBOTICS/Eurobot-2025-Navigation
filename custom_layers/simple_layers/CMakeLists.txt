@@ -117,18 +117,14 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-include
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(${catkin_INCLUDE_DIRS} include)
+
+add_library(simple_layer src/simple_layer.cpp)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/simple_layers.cpp
 # )
-add_library(simple_layer plugins/simple_layer.cpp)
-add_library(grid_layer plugins/grid_layer.cpp)
-
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -154,12 +150,6 @@ add_library(grid_layer plugins/grid_layer.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-
-# add by Ben
-# add_executable(addObstacle src/addObstacle.cpp)
-# add_dependencies(addObstacle ${catkin_EXPORTED_TARGETS})
-# target_link_libraries(addObstacle ${catkin_LIBRARIES})
-
 
 #############
 ## Install ##

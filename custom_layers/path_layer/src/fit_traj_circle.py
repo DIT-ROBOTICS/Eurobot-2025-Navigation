@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-#coding: utf-8
+#!/usr/bin/env python
 from circle_fit import taubinSVD
 from collections import deque
 import statistics
@@ -86,7 +85,7 @@ if __name__ == '__main__':
     rospy.init_node('fit_traj_circle', anonymous=True)
     ns_prefix = rospy.get_param('~robot_name', 'robot')
 
-    rospy.Subscriber('/rival/vive', Odometry, RivalOdomCallback)
+    rospy.Subscriber('/rival/final_pose', Odometry, RivalOdomCallback)
     circle_pub = rospy.Publisher('circle_fit', Twist, queue_size=1)
     rate = rospy.Rate(20)
     while not rospy.is_shutdown():

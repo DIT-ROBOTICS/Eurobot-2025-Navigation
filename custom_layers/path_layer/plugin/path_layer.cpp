@@ -136,8 +136,9 @@ void PathLayer::updateBounds(double robot_x, double robot_y, double robot_yaw,
     // }
     if (RivalObstacleTimeout != -1 && CurrentTime - RivalObstacleLastTime.toSec() > RivalObstacleTimeout)
         isRivalObstacle = false;
-    if (RivalObstacleTimeout != -1 && CurrentTime - RivalTrajLastTime.toSec() > RivalObstacleTimeout)
-        isTrajCircle = false; 
+    if (RivalObstacleTimeout != -1 && CurrentTime - RivalTrajLastTime.toSec() > RivalObstacleTimeout) {
+        isTrajCircle = false;
+    }
     // Get the Costmap lock. (Optional)
     boost::unique_lock<mutex_t> lock(*(getMutex()));
 
