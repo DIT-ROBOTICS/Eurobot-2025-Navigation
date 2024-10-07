@@ -73,7 +73,7 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/linear_max_velocity", linear_max_vel_, 0.3);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/linear_kp", linear_kp_, 2.0);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/linear_kd", linear_kd_, 1.0);
-    get_param_ok &= nh_local_.param<double>(robot_type_ + "/linear_acceleration", linear_acceleration_, 0.15);
+    get_param_ok &= nh_local_.param<double>(robot_type_ + "/linear_acceleration", linear_acceleration_, 0.0001);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/slow_linear_max_velocity", slow_linear_max_vel_, 0.7);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/slow_linear_kp", slow_linear_kp_, 3.5);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/slow_linear_acceleration", slow_acceleration_, 1.0);
@@ -94,7 +94,10 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
     get_param_ok &= nh_local_.param<double>("first_rotate_range", first_rotate_range_, 0.1);                     // Not in yaml
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/angular_adjust_kp", angular_adjust_kp_, 0.8);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/angular_adjust_limit", angular_adjust_limit_, 0.1);
-
+    get_param_ok &= nh_local_.param<std::string>("robot_name",robot_name_,"robot");
+    get_param_ok &= nh_local_.param<double>(robot_type_ + "/front_check_d", front_check_dx_, 0.005);
+    get_param_ok &= nh_local_.param<double>(robot_type_ + "/front_check_d", front_check_dy_, 0.005);
+    get_param_ok &= nh_local_.param<double>(robot_type_ + "/front_check_dist", front_check_dist_, 0.1);
 
     get_param_ok &= nh_local_.param<int>("pose_type", pose_type_, 0);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/rival_tolerance", rival_tolerance_, 0.40);
@@ -108,12 +111,19 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
             } else if (pose_type_ == 1) {
                 pose_sub_ = nh_.subscribe("final_pose", 50, &Dock10Executor::poseCB_Odometry, this);
             }
+            // costmap_2d::Costmap2DROS global_costmap("global_costmap", nh_);
+            // costmap_2d::Costmap2D* master_grid = global_costmap.getCostmap();
             rival_sub_ = nh_.subscribe("/rival/final_pose", 50, &Dock10Executor::rivalCB_Odometry, this);
+            
             // rival2_sub_ = nh_.subscribe("/rival2/odom", 50, &DockExecutor::rivalCB_Odometry, this);
+            std::string jkl = robot_name_ + "/move_base/global_costmap/costmap";
+            costmap2d_sub_ = nh_.subscribe( "/" + robot_name_ + "/move_base/global_costmap/costmap",50, &Dock10Executor::costmap2dCB, this);         
+            ROS_WARN("12313213233131321 %s",  jkl.c_str());
             pub_ = nh_.advertise<geometry_msgs::Twist>("dock_exec_cmd_vel", 1);
             goalreachedPub_ = nh_.advertise<std_msgs::Char>("dock_exec_status", 1);
             fast_mode_client = nh_.serviceClient<std_srvs::SetBool>("fast_spin");
             map_sub_ = nh_.subscribe("/robot/move_base/global_costmap/costmap", 20, &Dock10Executor::costmapCB, this);
+            
         } else {
             goal_sub_.shutdown();
             pose_sub_.shutdown();
@@ -146,6 +156,18 @@ void Dock10Executor::velocityPUB() {
     cmd_vel.angular.y = 0.0;
     cmd_vel.angular.z = vel_[2];
     pub_.publish(cmd_vel);
+}
+void Dock10Executor::costmap2dCB(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
+    costmap_data = msg->data;
+    //ROS_INFO("cost %d", costmap_data[41360]);
+    // float reso = msg->info.resolution;
+    // int width = msg->info.width;
+    int height = msg->info.height;
+    // // ROS_ERROR("costmap_data[1] = %d", costmap_data[1]);
+    // ROS_INFO("reso is %f", reso);
+    // ROS_INFO("w is %d", width);
+    //ROS_INFO("h is %d", height);
+
 }
 
 void Dock10Executor::timerCB(const ros::TimerEvent& e) {
@@ -232,41 +254,175 @@ void Dock10Executor::move() {
         mode_ = MODE::ROTATE;
     }
     else{
-        // double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
-        // double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
-        double vel_x = 0.0;
-        double vel_y = 0.0;
+        slope_x_ = (goal_[1] - pose_[1]) / (goal_[0] - pose_[0]);
+        slope_y_ = (goal_[0] - pose_[0]) / (goal_[1] - pose_[1]);
+        double front_check_dist_x = fabs(front_check_dist_ * cos(second_ang_diff_));
+        double front_check_dist_y = fabs(front_check_dist_ * cos(M_PI / 2 + second_ang_diff_));
+        double exact_front_check_dist_x = std::min(front_check_dist_x, dist_);
+        double exact_front_check_dist_y = std::min(front_check_dist_y, dist_);
+        int front_check_num_x = exact_front_check_dist_x / front_check_dx_;
+        int front_check_num_y = exact_front_check_dist_y / front_check_dy_;
         
-        dist_ = std::min((dist_) * cur_linear_kp_, linear_kp_);
-        vel_x = dist_ * cos(first_ang_diff_);
-        vel_y = dist_ * sin(first_ang_diff_);
-        if(vel_x >= 0){
-            vel_[0] += 1.0 / control_frequency_ * linear_acceleration_;
-            vel_[0] = std::min(vel_[0], vel_x);
+        
+        front_check_point_.clear();
+
+        
+            //ROS_WARN("66666666666");
+            //ROS_WARN("fabs second_ang_diff_ is %lf", fabs(second_ang_diff_));
+
+            if(fabs(second_ang_diff_) >= (M_PI / 4) && fabs(second_ang_diff_) <= (M_PI * 3 / 4)){
+                for(int i = 0; i < front_check_num_y; i++){
+                    if(goal_[1] >= pose_[1]){
+                        //ROS_WARN("case 1");
+                        double x_p = (i+1) * front_check_dy_ * slope_y_ + pose_[0];
+                        double y_p = (i+1) * front_check_dy_ + pose_[1];
+                        //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                        //ROS_WARN("77777777777777");
+                        front_check_point_.push_back(std::make_pair(x_p,y_p));
+                    }
+                    else{
+                        //ROS_WARN("case 2");
+                        double x_p = -(i+1) * front_check_dy_ * slope_y_ + pose_[0];
+                        double y_p = -(i+1) * front_check_dy_ + pose_[1];
+                        //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                        //ROS_WARN("77777777777777");
+                        front_check_point_.push_back(std::make_pair(x_p,y_p));
+                    }  
+                }
+                
+            }
+            else{
+                for(int i = 0; i < front_check_num_x; i++){
+                    if(goal_[0] >= pose_[0]){
+                    //ROS_WARN("case 3");
+                    double x_p = (i+1) * front_check_dx_ + pose_[0];
+                    double y_p = (i+1) * front_check_dx_ * slope_x_ + pose_[1];
+                    //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                    //ROS_WARN("77777777777777");
+                    front_check_point_.push_back(std::make_pair(x_p,y_p));
+                    }
+                    else{
+                        //ROS_WARN("case 4");
+                        double x_p = -(i+1) * front_check_dx_ + pose_[0];
+                        double y_p = -(i+1) * front_check_dx_ * slope_x_ + pose_[1];
+                        //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                        //ROS_WARN("77777777777777");
+                        front_check_point_.push_back(std::make_pair(x_p,y_p));
+                    }
+                }
+                    
+            }
+        // for(int i = 0; i < front_check_num_; i++){
+        //     //ROS_WARN("66666666666");
+        //     // ROS_WARN("fabs second_ang_diff_ is %lf", fabs(second_ang_diff_));
+        //     if(fabs(second_ang_diff_) >= (M_PI / 4) && fabs(second_ang_diff_) <= (M_PI * 3 / 4)){
+        //         if(goal_[1] >= pose_[1]){
+        //             //ROS_WARN("case 1");
+        //             double x_p = (i+1) * front_check_dy_ * slope_y_ + pose_[0];
+        //             double y_p = (i+1) * front_check_dy_ + pose_[1];
+        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+        //             //ROS_WARN("77777777777777");
+        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
+        //         }
+        //         else{
+        //             //ROS_WARN("case 2");
+        //             double x_p = -(i+1) * front_check_dy_ * slope_y_ + pose_[0];
+        //             double y_p = -(i+1) * front_check_dy_ + pose_[1];
+        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+        //             //ROS_WARN("77777777777777");
+        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
+        //         }  
+        //     }
+        //     else{
+                
+        //         if(goal_[0] >= pose_[0]){
+        //             //ROS_WARN("case 3");
+        //             double x_p = (i+1) * front_check_dx_ + pose_[0];
+        //             double y_p = (i+1) * front_check_dx_ * slope_x_ + pose_[1];
+        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+        //             //ROS_WARN("77777777777777");
+        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
+        //         }
+        //         else{
+        //             //ROS_WARN("case 4");
+        //             double x_p = -(i+1) * front_check_dx_ + pose_[0];
+        //             double y_p = -(i+1) * front_check_dx_ * slope_x_ + pose_[1];
+        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+        //             //ROS_WARN("77777777777777");
+        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
+        //         }
+        //     }
+            
+            
+        //}
+        for(int i = front_check_point_.size() - 1; i >= 0; i--){
+            //ROS_WARN("i = %d", i);
+
+            int mapX = front_check_point_[i].first * 100;
+            int mapY = front_check_point_[i].second * 100;
+            int cost = (mapY-1) * 300 + mapX;
+            //ROS_INFO("cost = %d, costmap_data.size = %ld", cost,costmap_data.size());
+            
+            if(costmap_data[cost] > 0 || costmap_data[cost] == -1){
+                ROS_WARN("i = %d", i);
+                ROS_ERROR("cost = %d", cost);
+                ROS_ERROR("costmap_data[cost] = %d", costmap_data[cost]);
+                mode_ = MODE::IDLE;
+                goal_[0] = pose_[0];
+                goal_[1] = pose_[1];
+                goal_[2] = pose_[2];
+                front_check_point_.clear();
+                break;
+            }
+        }
+        // ROS_INFO("[Docking10 Executor]:Not finish yet");
+        if(mode_ == MODE::IDLE){
+            ROS_INFO("[Docking10 Executor]: There is an obstacle");
+            vel_[0] = 0;
+            vel_[1] = 0;
+            vel_[2] = 0;
+            velocityPUB();
         }
         else{
-            vel_[0] -= 1.0 / control_frequency_ * linear_acceleration_;
-            vel_[0] = std::max(vel_[0], vel_x);
+            // double delta_x = (vx * cos(th) - vy * sin(th)) * dt;
+            // double delta_y = (vx * sin(th) + vy * cos(th)) * dt;
+            double vel_x = 0.0;
+            double vel_y = 0.0;
+            double max_vel = 0.0;
+            
+            max_vel = std::min((dist_) * cur_linear_kp_, linear_max_vel_);
+            vel_x = max_vel * cos(first_ang_diff_);
+            vel_y = max_vel * sin(first_ang_diff_);
+            if(vel_x >= 0){
+                // ROS_INFO("[Docking10 Executor]: Linear_acceleration %lf", linear_acceleration_);
+                vel_[0] += 1.0 / control_frequency_ * linear_acceleration_ * cos(first_ang_diff_);
+                vel_[0] = std::min(vel_[0], vel_x);
+            }
+            else{
+                vel_[0] += 1.0 / control_frequency_ * linear_acceleration_ * cos(first_ang_diff_);
+                vel_[0] = std::max(vel_[0], vel_x);
+            }
+            
+            if(vel_y >= 0){
+                vel_[1] += 1.0 / control_frequency_ * linear_acceleration_ * sin(first_ang_diff_);
+                vel_[1] = std::min(vel_[1], vel_y);
+            }
+            else{
+                vel_[1] += 1.0 / control_frequency_ * linear_acceleration_ * sin(first_ang_diff_);
+                vel_[1] = std::max(vel_[1], vel_y);
+            }
+            
+            vel_[2] = 0;  
+            velocityPUB();
         }
         
-        if(vel_y >= 0){
-            vel_[1] += 1.0 / control_frequency_ * linear_acceleration_;
-            vel_[1] = std::min(vel_[1], vel_y);
-        }
-        else{
-            vel_[1] -= 1.0 / control_frequency_ * linear_acceleration_;
-            vel_[1] = std::max(vel_[1], vel_y);
-        }
-        
-        vel_[2] = 0;  
-        velocityPUB();
     }
     
 }
 
 void Dock10Executor::rotate() {
-    ROS_INFO("goal angle is %lf",goal_[2]);
-    ROS_INFO("pose angle is %lf",pose_[2]);
+    //ROS_INFO("goal angle is %lf",goal_[2]);
+    //ROS_INFO("pose angle is %lf",pose_[2]);
     ang_diff_ = goal_[2] - pose_[2];
     vel_[0] = 0.0;
     vel_[1] = 0.0;
@@ -279,46 +435,46 @@ void Dock10Executor::rotate() {
         if(pose_[2] >= 0 && goal_[2] >= 0){
             if(ang_diff_ >= 0){
                 vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-                ROS_INFO("case 1");
+                //ROS_INFO("case 1");
             }
             else{
                 vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-                ROS_INFO("case 2");
+                //ROS_INFO("case 2");
             }
         }
         else if(pose_[2] < 0 && goal_[2] < 0){
            if(ang_diff_ >= 0){
                 vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-                ROS_INFO("case 3");
+                //ROS_INFO("case 3");
             }
             else{
                 vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-                ROS_INFO("case 4");
+                //ROS_INFO("case 4");
             } 
         }
         else if(pose_[2] < 0 && goal_[2] >= 0){
             if((fabs(pose_[2]) + goal_[2]) >= M_PI){
                 vel_[2] = std::max((-ang_diff_ * angular_kp_), -angular_max_vel_);
-                ROS_INFO("case 5");
+                //ROS_INFO("case 5");
             }
             else{
                 vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-                ROS_INFO("case 6");
+                //ROS_INFO("case 6");
             }
         }
         else{
             if((pose_[2] + fabs(goal_[2])) <= M_PI){
                 vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-                ROS_INFO("case 7");
+                //ROS_INFO("case 7");
             }
             else{
                 vel_[2] = std::min((-ang_diff_ * angular_kp_), angular_max_vel_);
-                ROS_INFO("case 8");
+                //ROS_INFO("case 8");
             }
         }
-        }
-        velocityPUB();
     }
+    velocityPUB();
+}
 
 void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     ROS_INFO_STREAM("[Dock10 Executor]: In the goalCB!");
@@ -371,8 +527,33 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     ROS_WARN("cost of goal:%f",cost_of_goal);
     ang_diff_ = goal_[2] - pose_[2];
     first_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0])) - pose_[2];
+    second_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0]));
+    ROS_WARN(" goal : %f %f %f ", goal_[0], goal_[1], goal_[2]);
+    mode_ = MODE::MOVE;
+    
+    
+    
+    // global_costmap->getCostmap()->worldToMap(goal_[0], goal_[1], mx, my);
+    // if (master_grid->worldToMap(goal_[0], goal_[1], mx, my)) {
+        
+    //     unsigned char cost = master_grid->getCost(mx, my);
 
-    // ROS_INFO(" pose : %f %f %f vel : %f %f %f", pose_  [0],pose_[1],pose_[2], vel_[0],vel_[1],vel_[2]);
+        
+    //     ROS_INFO("Cost at position (%f, %f) in world coordinates is: %u"goal_[0], goal_[1], cost);
+    // } else {
+        
+    //     ROS_WARN("World coordinates (%f, %f) are out of bounds!",goal_[0], goal_[1]);
+    // }
+    // // if (global_costmap->getCostmap()->worldToMap(goal_[0], goal_[1], mx, my)) {
+        
+    //     unsigned char cost = global_costmap->getCostmap()->getCost(mx, my);
+        
+        
+    //     ROS_INFO("Goal point cost: %d", cost);
+    // }
+    // else{
+    //     ROS_INFO("Goal point cost cant get");
+    // }
     // ROS_INFO(" dis : %f ,ang_dif :%f ,first_angle_diff: %f ", dist_,ang_diff_,first_ang_diff_);
     
     
@@ -383,10 +564,8 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     t_first_rot_ = t_now_;
 
     ROS_INFO_STREAM(t_now_);
-    mode_ = MODE::MOVE;
-    ROS_INFO("[Dock Executor]: Set Mode to DOCK FIRST ROTATE!");
-    // ROS_INFO("[Dock Executor]: Set Mode to DOCK FIRST ROTATE!");
-
+    
+   
     mini_dist_ = 100;
     if_get_goal_ = true;
     dacc_start_ = false;
@@ -637,3 +816,5 @@ int main(int argc, char** argv) {
         ros::spin();
     }
 }
+
+

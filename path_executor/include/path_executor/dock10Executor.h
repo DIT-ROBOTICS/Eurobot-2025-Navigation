@@ -11,11 +11,17 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 #include <std_srvs/SetBool.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <string>
 #include <cmath>
+#include <nav_msgs/OccupancyGrid.h>
+#include <costmap_2d/costmap_2d_ros.h>
+#include <costmap_2d/costmap_2d.h>
+#include <nav_msgs/GetPlan.h>
 
 #define _USE_MATH_DEFINES
 
@@ -46,15 +52,26 @@ class Dock10Executor {
     ros::Subscriber map_sub_;
     ros::Subscriber costmap_sub_;
     costmap_2d::Costmap2D* costmap_;
+    ros::Subscriber costmap2d_sub_;
+    
     // ros::Subscriber rival2_sub_;
     void goalCB(const geometry_msgs::PoseStamped& data);
     void poseCB_Odometry(const nav_msgs::Odometry& data);
     void poseCB_PoseWithCovarianceStamped(const geometry_msgs::PoseWithCovarianceStamped& data);
     void rivalCB_Odometry(const nav_msgs::Odometry& data);
     void costmapCB(const nav_msgs::OccupancyGrid& data);
+    void costmap2dCB(const nav_msgs::OccupancyGrid::ConstPtr& msg);
+    
+
+    //costmap
+    // costmap_2d::Costmap2DROS* global_costmap;
+    std::vector<int8_t> costmap_data;
+    
+    
     // Publisher
     ros::Publisher pub_;
     ros::Publisher goalreachedPub_;
+    ros::Publisher dock10_path_pub_;
     void velocityPUB();
 
     // for escape operation
@@ -93,6 +110,7 @@ class Dock10Executor {
     // bool rival_appeared_;
 
     std::string robot_type_; 
+    std::string robot_name_;
 
     double goal_[3];
     double pose_[3];
@@ -105,6 +123,7 @@ class Dock10Executor {
     double first_rotate_range_;
     double ang_diff_;
     double first_ang_diff_;
+    double second_ang_diff_;
     double cosx_;
     double sinx_;
     double mini_dist_ = 1000;
@@ -113,10 +132,20 @@ class Dock10Executor {
     double rival_dist_;
     double first_rot_need_time_;
     double t_first_rot_;
-    
-
+    double slope_x_;
+    double slope_y_;
+    double front_check_d_;
+    double front_check_dx_;
+    double front_check_dy_;
+    double front_check_dist_;
+    double exact_front_check_dist_;
+    std::vector<std::pair<double,double>> front_check_point_;
+    int front_check_num_;
     int debounce;
     int debounce_ang;
+    
+    unsigned int mx, my;
+    unsigned char cost;
 
     double rival_x_;
     double rival_y_;

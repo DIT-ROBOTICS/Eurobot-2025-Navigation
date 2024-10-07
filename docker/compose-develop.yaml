@@ -4,7 +4,7 @@ services:
     build:
       context: .
     image: navigation-summer
-    container_name: navigation-summer2
+    container_name: navigation-2025
     stdin_open: true
     tty: true
     privileged: true
