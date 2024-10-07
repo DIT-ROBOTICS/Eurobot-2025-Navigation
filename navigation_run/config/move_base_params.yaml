@@ -2,6 +2,7 @@
 # base_global_planner: "navfn/NavfnROS"
 base_global_planner: "global_planner/GlobalPlanner"
 # base_global_planner: "path_planner/PathPlanner"
+# base_global_planner: "global_planner/RRTGlobalPlanner"
 # base_global_planner: "carrot_planner/CarrotPlanner"
 # base_local_planner: "teb_local_planner/TebLocalPlannerROS"
 # base_local_planner: "dwa_local_planner/DWAPlannerROS"
@@ -18,7 +19,7 @@ oscillation_distance: 0.0
 planner_frequency: 0.0
 max_planning_retries: 0
 
-# global planner params
+# # global planner params
 GlobalPlanner:
   allow_unknown: true
   default_tolerance: 0.0
@@ -143,7 +144,7 @@ TebLocalPlannerROS:
   switching_blocking_period: 0.0
 
 # costmap common params
-robot_radius: 0.144
+robot_radius: 0.114
 inflation_radius: 0
 
 # global costmap params
@@ -162,6 +163,7 @@ global_costmap:
     - {name: static_layer, type: "costmap_2d::StaticLayer"}
     - {name: path_layer, type: "path_layer_namespace::PathLayer"}
     - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+    # - {name: simplelayer, type: "simple_layer_namespace::SimpleLayer"}
     # - {name: obst_sim_layer, type: "obst_sim_layer_namespace::ObstSimLayer"}
     # - {name: grid_layer, type: "simple_layer_namespace::GridLayer"}
     # - {name: path_layer, type: "path_layer_namespace::PathLayer"}
@@ -169,7 +171,7 @@ global_costmap:
   static_layer:
     enabled: true 
     map_topic: map
-    subscribe_to_updates: true 
+    # subscribe_to_updates: true 
     trinary_costmap: false
     lethal_cost_threshold: 10
     track_unknown_space: false

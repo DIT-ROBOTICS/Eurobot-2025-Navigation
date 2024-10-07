@@ -12,7 +12,7 @@
     <!-- <arg name="robot_name" default="robot2" if="$(arg is_robot2)"/> -->
     <arg name="robot_name" default="rival" if="$(arg is_rival)"/>
     <!-- <arg name="robot_name" default="rival2" if="$(arg is_rival2)"/> -->
-    <!-- <arg name="robot_type" default="differential" />  -->
+    <!-- <arg name="robot_type" default="differential" /> -->
     <arg name="robot_type" default="holonomic" />
 
     <remap from="$(arg robot_name)/Toposition" to="/Toposition" unless="$(arg is_sim)"/>

@@ -580,11 +580,6 @@ void DockExecutor::goalCB(const geometry_msgs::PoseStamped& data) {
         cur_linear_acceleration_ = linear_acceleration_;
         cur_linear_kp_ = linear_kp_;
     }
-    else if (data.header.frame_id == "dock10") {
-        cur_linear_max_vel_ = linear_max_vel_;
-        cur_linear_acceleration_ = linear_acceleration_;
-        cur_linear_kp_ = linear_kp_;
-    }
     else if (data.header.frame_id == "slow-dock") {
         cur_linear_max_vel_ = slow_linear_max_vel_;
         cur_linear_acceleration_ = slow_acceleration_;
