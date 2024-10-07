@@ -50,8 +50,6 @@ class Dock10Executor {
     ros::Subscriber pose_sub_;
     ros::Subscriber rival_sub_;
     ros::Subscriber map_sub_;
-    ros::Subscriber costmap_sub_;
-    costmap_2d::Costmap2D* costmap_;
     ros::Subscriber costmap2d_sub_;
     
     // ros::Subscriber rival2_sub_;
@@ -59,7 +57,6 @@ class Dock10Executor {
     void poseCB_Odometry(const nav_msgs::Odometry& data);
     void poseCB_PoseWithCovarianceStamped(const geometry_msgs::PoseWithCovarianceStamped& data);
     void rivalCB_Odometry(const nav_msgs::Odometry& data);
-    void costmapCB(const nav_msgs::OccupancyGrid& data);
     void costmap2dCB(const nav_msgs::OccupancyGrid::ConstPtr& msg);
     
 

@@ -78,7 +78,6 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/slow_linear_kp", slow_linear_kp_, 3.5);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/slow_linear_acceleration", slow_acceleration_, 1.0);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/linear_min_velocity", linear_min_vel_, 0.1); 
-
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/angular_max_velocity", angular_max_vel_, 1);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/angular_min_velocity", angular_min_vel_, 0.3);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/angular_kp", angular_kp_, 2.5);
@@ -98,7 +97,6 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/front_check_d", front_check_dx_, 0.005);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/front_check_d", front_check_dy_, 0.005);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/front_check_dist", front_check_dist_, 0.1);
-
     get_param_ok &= nh_local_.param<int>("pose_type", pose_type_, 0);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "/rival_tolerance", rival_tolerance_, 0.40);
     get_param_ok &= nh_local_.param<double>(robot_type_ + "rival_parallel_tolerance", rival_parallel_tolerance_, 0.4);
@@ -111,18 +109,14 @@ bool Dock10Executor::initializeParams(std_srvs::Empty::Request& req, std_srvs::E
             } else if (pose_type_ == 1) {
                 pose_sub_ = nh_.subscribe("final_pose", 50, &Dock10Executor::poseCB_Odometry, this);
             }
-            // costmap_2d::Costmap2DROS global_costmap("global_costmap", nh_);
-            // costmap_2d::Costmap2D* master_grid = global_costmap.getCostmap();
             rival_sub_ = nh_.subscribe("/rival/final_pose", 50, &Dock10Executor::rivalCB_Odometry, this);
-            
             // rival2_sub_ = nh_.subscribe("/rival2/odom", 50, &DockExecutor::rivalCB_Odometry, this);
-            std::string jkl = robot_name_ + "/move_base/global_costmap/costmap";
             costmap2d_sub_ = nh_.subscribe( "/" + robot_name_ + "/move_base/global_costmap/costmap",50, &Dock10Executor::costmap2dCB, this);         
-            ROS_WARN("12313213233131321 %s",  jkl.c_str());
+            
             pub_ = nh_.advertise<geometry_msgs::Twist>("dock_exec_cmd_vel", 1);
             goalreachedPub_ = nh_.advertise<std_msgs::Char>("dock_exec_status", 1);
+
             fast_mode_client = nh_.serviceClient<std_srvs::SetBool>("fast_spin");
-            map_sub_ = nh_.subscribe("/robot/move_base/global_costmap/costmap", 20, &Dock10Executor::costmapCB, this);
             
         } else {
             goal_sub_.shutdown();
@@ -159,15 +153,8 @@ void Dock10Executor::velocityPUB() {
 }
 void Dock10Executor::costmap2dCB(const nav_msgs::OccupancyGrid::ConstPtr& msg) {
     costmap_data = msg->data;
-    //ROS_INFO("cost %d", costmap_data[41360]);
-    // float reso = msg->info.resolution;
-    // int width = msg->info.width;
+    map_data = *msg;
     int height = msg->info.height;
-    // // ROS_ERROR("costmap_data[1] = %d", costmap_data[1]);
-    // ROS_INFO("reso is %f", reso);
-    // ROS_INFO("w is %d", width);
-    //ROS_INFO("h is %d", height);
-
 }
 
 void Dock10Executor::timerCB(const ros::TimerEvent& e) {
@@ -195,7 +182,6 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             mini_dist_ = dist_;
         }*/
 
-
         t_now_ = ros::Time::now().toSec();
         dt_ = t_now_ - t_bef_;
 
@@ -204,15 +190,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                 // ROS_INFO_STREAM("start move");
                 move();
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()) {
-                    ROS_INFO("Start Escape From MOVE State");
-                    escape();
-                    ROS_INFO("End Escape From MOVE State");
-                    // goal_[0] = original_goal[0];
-                    // goal_[1] = original_goal[1];
-                    // goal_[2] = original_goal[2];
-                }
-                printSquardCost();
+                if(needEscape()) escape();
                 break;
             }
             case MODE::ROTATE: {
@@ -221,14 +199,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             }
             case MODE::IDLE: {
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()) {
-                    ROS_INFO("Start Escape From IDLE State");
-                    escape();
-                    ROS_INFO("End Escape From IDLE State");
-                    // goal_[0] = original_goal[0];
-                    // goal_[1] = original_goal[1];
-                    // goal_[2] = original_goal[2];
-                }
+                if(needEscape()) escape();
                 break;
             }
         }
@@ -236,10 +207,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
         velocityPUB();
     }
 
-    // ROS_INFO("%f %f %f", vel_[0], vel_[1], dt_);
-
     // remember the time when leaving this loop
-    // printCostmap();
     t_bef_ = ros::Time::now().toSec();
 }
 
@@ -265,108 +233,59 @@ void Dock10Executor::move() {
         
         
         front_check_point_.clear();
-
-        
-            //ROS_WARN("66666666666");
-            //ROS_WARN("fabs second_ang_diff_ is %lf", fabs(second_ang_diff_));
-
-            if(fabs(second_ang_diff_) >= (M_PI / 4) && fabs(second_ang_diff_) <= (M_PI * 3 / 4)){
-                for(int i = 0; i < front_check_num_y; i++){
-                    if(goal_[1] >= pose_[1]){
-                        //ROS_WARN("case 1");
-                        double x_p = (i+1) * front_check_dy_ * slope_y_ + pose_[0];
-                        double y_p = (i+1) * front_check_dy_ + pose_[1];
-                        //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-                        //ROS_WARN("77777777777777");
-                        front_check_point_.push_back(std::make_pair(x_p,y_p));
-                    }
-                    else{
-                        //ROS_WARN("case 2");
-                        double x_p = -(i+1) * front_check_dy_ * slope_y_ + pose_[0];
-                        double y_p = -(i+1) * front_check_dy_ + pose_[1];
-                        //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-                        //ROS_WARN("77777777777777");
-                        front_check_point_.push_back(std::make_pair(x_p,y_p));
-                    }  
-                }
-                
-            }
-            else{
-                for(int i = 0; i < front_check_num_x; i++){
-                    if(goal_[0] >= pose_[0]){
-                    //ROS_WARN("case 3");
-                    double x_p = (i+1) * front_check_dx_ + pose_[0];
-                    double y_p = (i+1) * front_check_dx_ * slope_x_ + pose_[1];
+        //ROS_WARN("fabs second_ang_diff_ is %lf", fabs(second_ang_diff_));
+        if(fabs(second_ang_diff_) >= (M_PI / 4) && fabs(second_ang_diff_) <= (M_PI * 3 / 4)){
+            for(int i = 0; i < front_check_num_y; i++){
+                if(goal_[1] >= pose_[1]){
+                    //ROS_WARN("case 1");
+                    double x_p = (i+1) * front_check_dy_ * slope_y_ + pose_[0];
+                    double y_p = (i+1) * front_check_dy_ + pose_[1];
                     //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
                     //ROS_WARN("77777777777777");
                     front_check_point_.push_back(std::make_pair(x_p,y_p));
-                    }
-                    else{
-                        //ROS_WARN("case 4");
-                        double x_p = -(i+1) * front_check_dx_ + pose_[0];
-                        double y_p = -(i+1) * front_check_dx_ * slope_x_ + pose_[1];
-                        //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-                        //ROS_WARN("77777777777777");
-                        front_check_point_.push_back(std::make_pair(x_p,y_p));
-                    }
                 }
-                    
+                else{
+                    //ROS_WARN("case 2");
+                    double x_p = -(i+1) * front_check_dy_ * slope_y_ + pose_[0];
+                    double y_p = -(i+1) * front_check_dy_ + pose_[1];
+                    //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                    //ROS_WARN("77777777777777");
+                    front_check_point_.push_back(std::make_pair(x_p,y_p));
+                }  
             }
-        // for(int i = 0; i < front_check_num_; i++){
-        //     //ROS_WARN("66666666666");
-        //     // ROS_WARN("fabs second_ang_diff_ is %lf", fabs(second_ang_diff_));
-        //     if(fabs(second_ang_diff_) >= (M_PI / 4) && fabs(second_ang_diff_) <= (M_PI * 3 / 4)){
-        //         if(goal_[1] >= pose_[1]){
-        //             //ROS_WARN("case 1");
-        //             double x_p = (i+1) * front_check_dy_ * slope_y_ + pose_[0];
-        //             double y_p = (i+1) * front_check_dy_ + pose_[1];
-        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-        //             //ROS_WARN("77777777777777");
-        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
-        //         }
-        //         else{
-        //             //ROS_WARN("case 2");
-        //             double x_p = -(i+1) * front_check_dy_ * slope_y_ + pose_[0];
-        //             double y_p = -(i+1) * front_check_dy_ + pose_[1];
-        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-        //             //ROS_WARN("77777777777777");
-        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
-        //         }  
-        //     }
-        //     else{
+            
+        }
+        else{
+            for(int i = 0; i < front_check_num_x; i++){
+                if(goal_[0] >= pose_[0]){
+                //ROS_WARN("case 3");
+                double x_p = (i+1) * front_check_dx_ + pose_[0];
+                double y_p = (i+1) * front_check_dx_ * slope_x_ + pose_[1];
+                //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                //ROS_WARN("77777777777777");
+                front_check_point_.push_back(std::make_pair(x_p,y_p));
+                }
+                else{
+                    //ROS_WARN("case 4");
+                    double x_p = -(i+1) * front_check_dx_ + pose_[0];
+                    double y_p = -(i+1) * front_check_dx_ * slope_x_ + pose_[1];
+                    //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
+                    //ROS_WARN("77777777777777");
+                    front_check_point_.push_back(std::make_pair(x_p,y_p));
+                }
+            }
                 
-        //         if(goal_[0] >= pose_[0]){
-        //             //ROS_WARN("case 3");
-        //             double x_p = (i+1) * front_check_dx_ + pose_[0];
-        //             double y_p = (i+1) * front_check_dx_ * slope_x_ + pose_[1];
-        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-        //             //ROS_WARN("77777777777777");
-        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
-        //         }
-        //         else{
-        //             //ROS_WARN("case 4");
-        //             double x_p = -(i+1) * front_check_dx_ + pose_[0];
-        //             double y_p = -(i+1) * front_check_dx_ * slope_x_ + pose_[1];
-        //             //ROS_WARN("X = %lf Y = %lf",x_p,y_p);
-        //             //ROS_WARN("77777777777777");
-        //             front_check_point_.push_back(std::make_pair(x_p,y_p));
-        //         }
-        //     }
-            
-            
-        //}
+        }
+    
         for(int i = front_check_point_.size() - 1; i >= 0; i--){
-            //ROS_WARN("i = %d", i);
 
             int mapX = front_check_point_[i].first * 100;
             int mapY = front_check_point_[i].second * 100;
             int cost = (mapY-1) * 300 + mapX;
-            //ROS_INFO("cost = %d, costmap_data.size = %ld", cost,costmap_data.size());
             
             if(costmap_data[cost] > 0 || costmap_data[cost] == -1){
-                ROS_WARN("i = %d", i);
-                ROS_ERROR("cost = %d", cost);
-                ROS_ERROR("costmap_data[cost] = %d", costmap_data[cost]);
+                ROS_INFO("cost = %d", cost);
+                ROS_INFO("costmap_data[cost] = %d", costmap_data[cost]);
                 mode_ = MODE::IDLE;
                 goal_[0] = pose_[0];
                 goal_[1] = pose_[1];
@@ -415,9 +334,7 @@ void Dock10Executor::move() {
             vel_[2] = 0;  
             velocityPUB();
         }
-        
     }
-    
 }
 
 void Dock10Executor::rotate() {
@@ -433,44 +350,20 @@ void Dock10Executor::rotate() {
     }
     else{
         if(pose_[2] >= 0 && goal_[2] >= 0){
-            if(ang_diff_ >= 0){
-                vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-                //ROS_INFO("case 1");
-            }
-            else{
-                vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-                //ROS_INFO("case 2");
-            }
+            if(ang_diff_ >= 0) vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
+            else vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
         }
         else if(pose_[2] < 0 && goal_[2] < 0){
-           if(ang_diff_ >= 0){
-                vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-                //ROS_INFO("case 3");
-            }
-            else{
-                vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-                //ROS_INFO("case 4");
-            } 
+           if(ang_diff_ >= 0) vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
+            else vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
         }
         else if(pose_[2] < 0 && goal_[2] >= 0){
-            if((fabs(pose_[2]) + goal_[2]) >= M_PI){
-                vel_[2] = std::max((-ang_diff_ * angular_kp_), -angular_max_vel_);
-                //ROS_INFO("case 5");
-            }
-            else{
-                vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_);
-                //ROS_INFO("case 6");
-            }
+            if((fabs(pose_[2]) + goal_[2]) >= M_PI) vel_[2] = std::max((-ang_diff_ * angular_kp_), -angular_max_vel_);
+            else vel_[2] = std::min((ang_diff_ * angular_kp_), angular_max_vel_); 
         }
         else{
-            if((pose_[2] + fabs(goal_[2])) <= M_PI){
-                vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
-                //ROS_INFO("case 7");
-            }
-            else{
-                vel_[2] = std::min((-ang_diff_ * angular_kp_), angular_max_vel_);
-                //ROS_INFO("case 8");
-            }
+            if((pose_[2] + fabs(goal_[2])) <= M_PI) vel_[2] = std::max((ang_diff_ * angular_kp_), -angular_max_vel_);
+            else vel_[2] = std::min((-ang_diff_ * angular_kp_), angular_max_vel_);
         }
     }
     velocityPUB();
@@ -523,49 +416,17 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
 
 
     dist_ = distance(pose_[0], pose_[1], goal_[0], goal_[1]);
-    double cost_of_goal = findOneGridCost(goal_[0],goal_[1]);
-    ROS_WARN("cost of goal:%f",cost_of_goal);
     ang_diff_ = goal_[2] - pose_[2];
     first_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0])) - pose_[2];
     second_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0]));
     ROS_WARN(" goal : %f %f %f ", goal_[0], goal_[1], goal_[2]);
     mode_ = MODE::MOVE;
-    
-    
-    
-    // global_costmap->getCostmap()->worldToMap(goal_[0], goal_[1], mx, my);
-    // if (master_grid->worldToMap(goal_[0], goal_[1], mx, my)) {
-        
-    //     unsigned char cost = master_grid->getCost(mx, my);
-
-        
-    //     ROS_INFO("Cost at position (%f, %f) in world coordinates is: %u"goal_[0], goal_[1], cost);
-    // } else {
-        
-    //     ROS_WARN("World coordinates (%f, %f) are out of bounds!",goal_[0], goal_[1]);
-    // }
-    // // if (global_costmap->getCostmap()->worldToMap(goal_[0], goal_[1], mx, my)) {
-        
-    //     unsigned char cost = global_costmap->getCostmap()->getCost(mx, my);
-        
-        
-    //     ROS_INFO("Goal point cost: %d", cost);
-    // }
-    // else{
-    //     ROS_INFO("Goal point cost cant get");
-    // }
-    // ROS_INFO(" dis : %f ,ang_dif :%f ,first_angle_diff: %f ", dist_,ang_diff_,first_ang_diff_);
-    
-    
-    // ROS_INFO(" dis : %f ,ang_dif :%f ,first_angle_diff: %f ", dist_,ang_diff_,first_ang_diff_);
 
     first_rot_need_time_ = fabs(first_ang_diff_ / angular_max_vel_);
 
     t_first_rot_ = t_now_;
-
     ROS_INFO_STREAM(t_now_);
     
-   
     mini_dist_ = 100;
     if_get_goal_ = true;
     dacc_start_ = false;
@@ -573,20 +434,10 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     t_bef_ = ros::Time::now().toSec();
 }
 
-void Dock10Executor::costmapCB(const nav_msgs::OccupancyGrid& data) {
-    map_data = data;
-    // for(int i = 0;i<data.info.width;i++){
-    //     for(int j = 0;j<data.info.height;j++){
-    //         ROS_INFO("(%d,%d):%d",i,j,map_data.data[i*data.info.width+j]);
-    //     }
-    // }
-    return;
-}
-
 double Dock10Executor::findOneGridCost(double x, double y){
     int mapX = x * 100;
     int mapY = y * 100;
-    int index_cost = (mapY -1) * 300 + mapX;
+    int index_cost = (mapY - 1) * 300 + mapX;
     ROS_INFO("cost of grid[%d][%d]:%d, index:%d",mapX,mapY,map_data.data[index_cost],index_cost);
     return map_data.data[index_cost];   
 }
@@ -607,59 +458,42 @@ bool Dock10Executor::needEscape(){
     for(int i = 5;i<scan_radius;i++){
         int index = scan_radius/2 - i -1;
         // first row
-        std::cout << "checking first row" << "\n";
         for(int j = 0;j<i;j++){
-            std::cout << scanSquard[index][j] << " ";
             if(scanSquard[index][j] > 0) need_escape = true;
             else{
-                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
-        std::cout << "\n";
-        std::cout << "checking last row" << "\n";
         // last row
         for (int j = 0; j < i; j++)
         {
-            std::cout << scanSquard[scan_radius - index - 1][j] << " ";
             if(scanSquard[scan_radius - index - 1][j] > 0) need_escape = true;
             else{
-                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
-        std::cout << "\n";
-        std::cout << "checking first column" << "\n";
         // first column
         for (int j = 0; j < i; j++)
         {
-            std::cout << scanSquard[j][index] <<" ";
             if(scanSquard[j][index] > 0) need_escape = true;
             else{
-                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
-        std::cout << "\n";
-        std::cout << "checking last column" << "\n";
         // last column
         for (int j = 0; j < i; j++)
         {
-            std::cout << scanSquard[j][scan_radius - index - 1] << " ";
             if(scanSquard[j][scan_radius - index - 1] > 0) need_escape = true;
             else{
-                // ROS_INFO("Time to go out of needEscape");
                 need_escape = false;
                 return need_escape;
             }
         }
-        std::cout << "\n";
         if(need_escape) break;
     }
-    
     ROS_WARN("Need escape");
     return need_escape;
 }
@@ -687,7 +521,7 @@ bool Dock10Executor::coordinateAvailable(double x, double y){
 }
 
 void Dock10Executor::escape(){
-    ROS_INFO("escaping");
+    ROS_INFO("Escaping");
     int min_cost = 100;
     int x = scan_radius/2;
     int y = scan_radius/2;
@@ -760,13 +594,11 @@ void Dock10Executor::StrongEscape(){
     int dx[4] = {-10,10,10,-10};
     int dy[4] = {-10,-10,10,10};
     int state = 0;
-    ROS_INFO("Strong Escape x:%d y:%d",x, y,state);
     if(x > 150 && y > 100) state = 0; //first
     else if(x < 150 && y > 100) state = 1; //second
     else if(x < 150 && y < 100) state = 2; //third
     else if(x > 150 && y < 100) state = 3; //fourth
 
-    ROS_INFO("Strong Escape State:%d",state);
     goal_[0] = pose_[0] + dx[state] * 0.01;
     goal_[1] = pose_[1] + dy[state] * 0.01;
     mode_ = MODE::MOVE;
@@ -792,7 +624,7 @@ void Dock10Executor::poseCB_PoseWithCovarianceStamped(const geometry_msgs::PoseW
     double _, yaw;
     qt.getRPY(_, _, yaw);
     pose_[2] = yaw;
-    //** ROS_INFO("odom: %f %f", pose_[0], pose_[1]);
+    // ROS_INFO("odom: %f %f", pose_[0], pose_[1]);
 }
 
 void Dock10Executor::rivalCB_Odometry(const nav_msgs::Odometry& data){
@@ -816,5 +648,3 @@ int main(int argc, char** argv) {
         ros::spin();
     }
 }
-
-
