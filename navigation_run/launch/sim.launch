@@ -6,6 +6,8 @@
         <arg name="is_robot" value="true" />
     </include>
 
+    <include file="$(find fake_rival)/launch/fake_rival.launch"/>
+
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find navigation_run)/rviz/rviz_sim.rviz" if="$(arg is_sim)"/>
     <!-- <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" args="/robot1/cmd_ve/linear/x:y" if="$(arg is_sim)" /> -->
     <!-- <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot" args="/cmd_ve/linear/x:y" unless="$(arg is_sim)" /> -->

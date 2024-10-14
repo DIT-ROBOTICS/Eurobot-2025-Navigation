@@ -11,7 +11,7 @@ services:
 
 
     network_mode: host
-    working_dir: /home/user/Eurobot2024-Navigation-ws
+    working_dir: /home/user/Eurobot2025-Navigation-ws
 
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -20,7 +20,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev:/dev
       - $HOME/.Xauthority:/home/user/.Xauthority
-      - D:\DIT\eurobot_navigation\eurobot_nav_ws:/home/user/Eurobot2024-Navigation-ws
+      - D:\DIT\eurobot_navigation\nav2025ws:/home/user/Eurobot2025-Navigation-ws
 
     environment:
       - DISPLAY=172.30.176.1:0.0
