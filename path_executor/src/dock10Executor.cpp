@@ -202,6 +202,10 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                 if(needEscape()) escape();
                 break;
             }
+            case MODE::ESCAPE: {
+                escape();
+                break;
+            }
         }
         // publish cmd_vel
         velocityPUB();
@@ -397,11 +401,19 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
         cur_linear_max_vel_ = linear_max_vel_;
         cur_linear_acceleration_ = linear_acceleration_;
         cur_linear_kp_ = linear_kp_;
+        mode_ = MODE::MOVE;
     }
     else if (data.header.frame_id == "slow-dock") {
         cur_linear_max_vel_ = slow_linear_max_vel_;
         cur_linear_acceleration_ = slow_acceleration_;
         cur_linear_kp_ = slow_linear_kp_;
+        mode_ = MODE::MOVE;
+    }
+    else if(data.header.frame_id == "escape"){
+        cur_linear_max_vel_ = linear_max_vel_;
+        cur_linear_acceleration_ = linear_acceleration_;
+        cur_linear_kp_ = linear_kp_;
+        mode_ = MODE::ESCAPE;
     }
     else {
         ROS_WARN_STREAM("No such dock mode: " << data.header.frame_id);
@@ -420,7 +432,6 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     first_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0])) - pose_[2];
     second_ang_diff_ = atan2((goal_[1] - pose_[1]),(goal_[0] - pose_[0]));
     ROS_WARN(" goal : %f %f %f ", goal_[0], goal_[1], goal_[2]);
-    mode_ = MODE::MOVE;
 
     first_rot_need_time_ = fabs(first_ang_diff_ / angular_max_vel_);
 
@@ -585,7 +596,7 @@ void Dock10Executor::escape(){
 
     goal_[0] = goal_x;
     goal_[1] = goal_y;
-    mode_ = MODE::MOVE;
+    move();
 }
 
 void Dock10Executor::StrongEscape(){
