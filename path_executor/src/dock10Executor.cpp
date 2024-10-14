@@ -187,7 +187,6 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
 
         switch (mode_) {
             case MODE::MOVE: {
-                // ROS_INFO_STREAM("start move");
                 move();
                 findSquardCost(pose_[0],pose_[1]);
                 if(needEscape()) escape();
