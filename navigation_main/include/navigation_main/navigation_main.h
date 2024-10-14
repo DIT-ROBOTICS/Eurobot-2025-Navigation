@@ -193,6 +193,7 @@ class Navigation_Main {
 
         IDLE = 3,
         DOCK10_EXEC = 10,
+        DOCK10_ESCAPE = 11,
     };
     MISSION_TYPE mission_status_;
 

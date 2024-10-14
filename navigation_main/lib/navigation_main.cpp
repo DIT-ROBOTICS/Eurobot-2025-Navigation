@@ -105,6 +105,13 @@ void Navigation_Main::goalCB() {
         cur_timeout_ = param_dock_timeout_;
         dock10_exec_goal_pub_.publish(goal_msg_);
     }
+    else if (mission_type_ == 11) {
+        goal_msg_.header.frame_id = "dock10_escape";
+        ROS_INFO("call for escape");
+        mission_status_ = MISSION_TYPE::DOCK10_ESCAPE;
+        cur_timeout_ = param_dock_timeout_;
+        dock10_exec_goal_pub_.publish(goal_msg_);
+    }
     
 }
 
@@ -257,6 +264,10 @@ void Navigation_Main::FailToGoal(int fail_reason) {
     stop_signal.header.stamp = ros::Time::now();
     stop_signal.pose.position.x = stop_signal.pose.position.y = -1;
     goal_msg_.pose.position.x = goal_msg_.pose.position.y = -1;
+
+    geometry_msgs::PoseStamped escape_signal;
+    escape_signal.header.stamp = ros::Time::now();
+    escape_signal.pose.position.x = escape_signal.pose.position.y = -2;
     switch(fail_reason) {
         case 0:
             // Timeout
@@ -271,6 +282,10 @@ void Navigation_Main::FailToGoal(int fail_reason) {
             else if (mission_status_ == MISSION_TYPE::SLOW_DOCK_EXEC) {
                 ROS_INFO_STREAM("[" << param_node_name_ << "]: " << "Mission Failed " << "Reason: " << "Slow Dock Timeout");
                 dock_exec_goal_pub_.publish(stop_signal);
+            }
+            else if(mission_status_ == MISSION_TYPE::DOCK10_EXEC) {
+                ROS_INFO_STREAM("[" << param_node_name_ << "]: " << "Mission Failed " << "Reason: " << "Dock10 Timeout");
+                dock10_exec_goal_pub_.publish(escape_signal);
             }
             else {
                 ROS_INFO_STREAM("[" << param_node_name_ << "]: " << "Mission Failed " << "Reason: " << "Unknown");
@@ -289,6 +304,10 @@ void Navigation_Main::FailToGoal(int fail_reason) {
             else if (mission_status_ == MISSION_TYPE::SLOW_DOCK_EXEC) {
                 ROS_INFO_STREAM("[" << param_node_name_ << "]: " << "Mission Failed " << "Reason: " << "Goal Blocked");
                 dock_exec_goal_pub_.publish(stop_signal);
+            }
+            else if(mission_status_ == MISSION_TYPE::DOCK10_EXEC) {
+                ROS_INFO_STREAM("[" << param_node_name_ << "]: " << "Mission Failed " << "Reason: " << "Dock10 Timeout");
+                dock10_exec_goal_pub_.publish(escape_signal);
             }
             else {
                 ROS_INFO_STREAM("[" << param_node_name_ << "]: " << "Mission Failed " << "Reason: " << "Unknown");

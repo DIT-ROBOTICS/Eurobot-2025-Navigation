@@ -396,23 +396,15 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
         cur_linear_acceleration_ = linear_acceleration_;
         cur_linear_kp_ = linear_kp_;
     }
-    else if (data.header.frame_id == "dock10") {
+    else if (data.header.frame_id == "dock10" || data.header.frame_id == "escape") {
         cur_linear_max_vel_ = linear_max_vel_;
         cur_linear_acceleration_ = linear_acceleration_;
         cur_linear_kp_ = linear_kp_;
-        mode_ = MODE::MOVE;
     }
     else if (data.header.frame_id == "slow-dock") {
         cur_linear_max_vel_ = slow_linear_max_vel_;
         cur_linear_acceleration_ = slow_acceleration_;
         cur_linear_kp_ = slow_linear_kp_;
-        mode_ = MODE::MOVE;
-    }
-    else if(data.header.frame_id == "escape"){
-        cur_linear_max_vel_ = linear_max_vel_;
-        cur_linear_acceleration_ = linear_acceleration_;
-        cur_linear_kp_ = linear_kp_;
-        mode_ = MODE::ESCAPE;
     }
     else {
         ROS_WARN_STREAM("No such dock mode: " << data.header.frame_id);
@@ -442,6 +434,11 @@ void Dock10Executor::goalCB(const geometry_msgs::PoseStamped& data) {
     dacc_start_ = false;
     debounce_ang = 0;
     t_bef_ = ros::Time::now().toSec();
+    if((data.pose.position.x == -2 && data.pose.position.y == -2) || data.header.frame_id == "escape") {
+        ROS_INFO("[Dock10 Executor]: Mission Escape!");
+        mode_ = MODE::ESCAPE;
+    }
+    else mode_ = MODE::MOVE;
 }
 
 double Dock10Executor::findOneGridCost(double x, double y){
@@ -611,7 +608,7 @@ void Dock10Executor::StrongEscape(){
 
     goal_[0] = pose_[0] + dx[state] * 0.01;
     goal_[1] = pose_[1] + dy[state] * 0.01;
-    mode_ = MODE::MOVE;
+    move();
 }
 
 void Dock10Executor::poseCB_Odometry(const nav_msgs::Odometry& data) {
