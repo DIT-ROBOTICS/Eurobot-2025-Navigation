@@ -1,0 +1,4 @@
+<launch>
+    <rosparam command="load" file="$(find fake_rival)/config/fake_rival_param.yaml"/>
+    <node name="fake_rival" pkg="fake_rival" type="fake_rival_main"/>
+</launch>
