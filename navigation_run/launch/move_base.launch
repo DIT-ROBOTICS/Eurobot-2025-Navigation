@@ -31,7 +31,7 @@
         <arg name="is_sim" value="$(arg is_sim)" />
         <arg name="robot_type" value="$(arg robot_type)" />
     </include>
-    <include file="$(find path_executor)/launch/dockExecutor.launch">
+    <include file="$(find path_executor)/launch/dock10Executor.launch">
         <!-- <arg name="num" value="$(arg num)" /> -->
         <arg name="robot_name" value="$(arg robot_name)"/>
         <arg name="is_sim" value="$(arg is_sim)" />

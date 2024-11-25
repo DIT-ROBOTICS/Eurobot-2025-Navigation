@@ -83,9 +83,9 @@ int main(int argc, char * argv[])
         odom.header.stamp = ros::Time::now();
         odom.header.frame_id = "odom";
         fake_rival_pub.publish(odom);
-        ROS_ERROR("%f, %f", footprint_x[0], footprint_y[0]);
-        ROS_ERROR("%f, %f,, %d", footprint_x[size-1], footprint_y[size-1], size);
-        ROS_ERROR("%f, %f, %d", footprint_x[point], footprint_y[point], point);
+        // ROS_ERROR("%f, %f", footprint_x[0], footprint_y[0]);
+        // ROS_ERROR("%f, %f,, %d", footprint_x[size-1], footprint_y[size-1], size);
+        // ROS_ERROR("%f, %f, %d", footprint_x[point], footprint_y[point], point);
 
         ros::spinOnce();
         loop_rate.sleep();
