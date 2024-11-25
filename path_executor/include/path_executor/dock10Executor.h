@@ -22,6 +22,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <costmap_2d/costmap_2d.h>
 #include <nav_msgs/GetPlan.h>
+#include <iostream>
 
 #define _USE_MATH_DEFINES
 
@@ -81,8 +82,7 @@ class Dock10Executor {
     bool needEscape();
     void printSquardCost();
     void escape();
-    void StrongEscape();
-    bool coordinateAvailable(double x, double y);
+    std::pair<double,double> coordinateAvailable(double x, double y);
     // Server
     ros::ServiceClient fast_mode_client;
 

@@ -507,100 +507,43 @@ void Dock10Executor::printSquardCost(){
     }
 }
 
-bool Dock10Executor::coordinateAvailable(double x, double y){
-    int mapX = pose_[0] * 100 + (x - scan_radius/2);
-    int mapY = pose_[1] * 100 + (y - scan_radius/2);
-    
-    if(mapX < 50) return false;
-    else if(mapX > 250) return false;
+std::pair<double,double> Dock10Executor::coordinateAvailable(double mapX, double mapY){
 
-    if(mapY < 50) return false;
-    else if(mapY > 150) return false;
+    if(mapX > 300) mapX = 300;
+    else if (mapX < 0) mapX = 0;
 
-    return true;
+    if(mapY > 200) mapY = 200;
+    else if (mapY < 0) mapY = 0;
+
+    return std::pair<double, double>(mapX, mapY);
 }
 
 void Dock10Executor::escape(){
     ROS_INFO("Escaping");
     int min_cost = 100;
-    int x = scan_radius/2;
-    int y = scan_radius/2;
-    bool findRoote = false;
-    for(int i = 0;i<scan_radius;i++){
-        int index = scan_radius/2 - i -1;
-        // first row
-        for (int j = 0; j < i; j++)
-        {
-            if(scanSquard[scan_radius - index - 1][j] >= 0 && scanSquard[scan_radius - index - 1][j] < min_cost && coordinateAvailable(scan_radius - index - 1,j)) {
-                x = scan_radius - index - 1;
-                y = j;
-                min_cost = scanSquard[scan_radius - index - 1][j];
-                findRoote = true;
-            }
-        }
+    double mapX = pose_[0] * 100;
+    double mapY = pose_[1] * 100;
+    double map_rivalX = rival_x_ * 100;
+    double map_rivalY = rival_y_ * 100;
+    double escape_x = 0;
+    double escape_y = 0;
 
-        // last row
-        for(int j = 0;j < i;j++){
-            if(scanSquard[index][j] >= 0 && scanSquard[index][j] < min_cost && coordinateAvailable(index,j)) {
-                x = index;
-                y = j;
-                min_cost = scanSquard[index][j];
-                findRoote = true;
-            }
-        }
+    double scalar_wall = 0.3;
+    double scalar_rival = 0.5;
+    escape_x = (150 - mapX) * scalar_wall + (map_rivalX - mapX) * scalar_rival;
+    escape_y = (100 - mapY) * scalar_wall + (map_rivalY - mapY) * scalar_rival;
 
-        // first column
-        for (int j = 0; j < i; j++)
-        {
-            if(scanSquard[j][index] >= 0 && scanSquard[j][index] < min_cost && coordinateAvailable(j,index)) {
-                x = j;
-                y = index;
-                min_cost = scanSquard[j][index];
-                findRoote = true;
-            }
-        }
+    double goal_x = pose_[0] + (escape_x) * 0.01;
+    double goal_y = pose_[1] + (escape_y) * 0.01;
 
-        // last column
-        for (int j = 0; j < i; j++)
-        {
-            if (scanSquard[j][scan_radius - index - 1] >= 0&& scanSquard[j][scan_radius - index - 1] < min_cost && coordinateAvailable(j,scan_radius - index - 1)) {
-                x = j;
-                y = scan_radius - index - 1;
-                min_cost = scanSquard[j][scan_radius - index - 1];
-                findRoote = true;
-            }
-        }
-        if(findRoote) break;
-    }
-    if(!findRoote){
-        ROS_WARN("No way to escape");
-        StrongEscape();
-        return;
-    }
-    double goal_x = pose_[0] + (x - scan_radius/2) * 0.01;
-    double goal_y = pose_[1] + (y - scan_radius/2) * 0.01;
+    pair<double, double> escape_coordinate = coordinateAvailable(goal_x, goal_y);
+    
     original_goal[0] = goal_[0];
     original_goal[1] = goal_[1];
     original_goal[2] = goal_[2];
 
     goal_[0] = goal_x;
     goal_[1] = goal_y;
-    mode_ = MODE::MOVE;
-}
-
-void Dock10Executor::StrongEscape(){
-    int x = pose_[0] * 100;
-    int y = pose_[1] * 100;
-    int dx[4] = {-10,10,10,-10};
-    int dy[4] = {-10,-10,10,10};
-    int state = 0;
-    if(x > 150 && y > 100) state = 0; //first
-    else if(x < 150 && y > 100) state = 1; //second
-    else if(x < 150 && y < 100) state = 2; //third
-    else if(x > 150 && y < 100) state = 3; //fourth
-
-    goal_[0] = pose_[0] + dx[state] * 0.01;
-    goal_[1] = pose_[1] + dy[state] * 0.01;
     mode_ = MODE::MOVE;
 }
 
