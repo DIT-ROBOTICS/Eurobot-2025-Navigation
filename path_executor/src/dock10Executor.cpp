@@ -541,12 +541,15 @@ void Dock10Executor::escape(){
 
     double scalar_wall = 0.3;
     double scalar_rival = 0.5;
-    escape_x = (150 - mapX) * scalar_wall + (map_rivalX - mapX) * scalar_rival;
-    escape_y = (100 - mapY) * scalar_wall + (map_rivalY - mapY) * scalar_rival;
-
+    // escape_x = (150 - mapX) * scalar_wall + (map_rivalX - mapX) * scalar_rival;
+    // escape_y = (100 - mapY) * scalar_wall + (map_rivalY - mapY) * scalar_rival;
+    escape_x = (150 - mapX) * scalar_wall;
+    escape_y = (100 - mapY) * scalar_wall;
+    std::cout << (150 - mapX) << " " << (map_rivalX - mapX)<< std::endl;
     double goal_x = pose_[0] + (escape_x) * 0.01;
     double goal_y = pose_[1] + (escape_y) * 0.01;
-
+    std::cout << mapX << " " << mapY << std::endl;
+    std::cout << goal_x << " " << goal_y << std::endl;
     std::pair<double, double> escape_coordinate = coordinateAvailable(goal_x, goal_y);
     
     original_goal[0] = goal_[0];
