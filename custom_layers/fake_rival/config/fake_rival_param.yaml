@@ -1,0 +1,5 @@
+enable: true
+velocity: 0.2 #m/s
+random_mode: false
+footprint_x: [1, 2]
+footprint_y: [1, 1]
