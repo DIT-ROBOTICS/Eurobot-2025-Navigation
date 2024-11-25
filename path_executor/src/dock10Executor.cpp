@@ -204,6 +204,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             }
             case MODE::ESCAPE: {
                 escape();
+                if(!needEscape()) mode_ = MODE::IDLE;
                 break;
             }
         }
