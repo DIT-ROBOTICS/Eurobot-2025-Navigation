@@ -205,7 +205,12 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             case MODE::ESCAPE: {
                 escape();
                 findSquardCost(pose_[0],pose_[1]);
-                if(!needEscape()) mode_ = MODE::IDLE;
+                if(!needEscape()) {
+                    mode_ = MODE::IDLE;
+                    vel_[0] = 0;
+                    vel_[1] = 0;
+                    vel_[2] = 0;
+                }
                 break;
             }
         }
