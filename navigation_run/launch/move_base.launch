@@ -7,15 +7,12 @@
     <!-- <arg name="num" default="2" if="$(arg is_robot2)"/> -->
 
     <arg name="is_sim" default=""/>
-
     <!-- <remap from="/robot1/move_base/TebLocalPlannerROS/via_points" to="/robot1/move_base/GlobalPlanner/plan" /> -->
     <!-- <remap from="/robot1/cmd_vel" to="/robot1/raw_cmd_vel" /> -->
     <node pkg="move_base" type="move_base" name="move_base" output="screen" respawn="true">
         <remap from="cmd_vel" to="cmd_vel_obsleted" />
         <remap from="/$(arg robot_name)/odom" to="/$(arg robot_name)/final_pose" unless="$(arg is_sim)"/>
         <rosparam file="$(find navigation_run)/config/move_base_params.yaml" command="load"/>
-
-        
         <param name="global_costmap/grid_layer/odom_topic" value="/$(arg robot_name)/odom"/>
         <param name="global_costmap/path_layer/Topic/Robot/Odom" value="/$(arg robot_name)/odom_obseleted"/>
         <!-- <param name="global_costmap/path_layer/Topic/Rival/Obstacle" value="/rival/final_pose"/> -->
@@ -24,15 +21,11 @@
         <param name="global_costmap/robot_base_frame" value="$(arg robot_name)/base_footprint" />
         <param name="local_costmap/global_frame" value="$(arg robot_name)/map" />
         <param name="local_costmap/robot_base_frame" value="$(arg robot_name)/base_footprint" />
-
+        <!-- rrt-star -->
+        <!-- <param name="base_global_planner" value="global_planner/RRTGlobalPlanner"/> -->
+        <!-- <rosparam file="$(find rrt-global-planner)/params/rrt_global_planner.yaml" command="load" /> -->
     </node>
     <include file="$(find path_executor)/launch/pathExecutor.launch">
-        <!-- <arg name="num" value="$(arg num)" /> -->
-        <arg name="robot_name" value="$(arg robot_name)"/>
-        <arg name="is_sim" value="$(arg is_sim)" />
-        <arg name="robot_type" value="$(arg robot_type)" />
-    </include>
-    <include file="$(find path_executor)/launch/dock10Executor.launch">
         <!-- <arg name="num" value="$(arg num)" /> -->
         <arg name="robot_name" value="$(arg robot_name)"/>
         <arg name="is_sim" value="$(arg is_sim)" />
