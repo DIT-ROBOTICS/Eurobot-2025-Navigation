@@ -190,7 +190,7 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
                 // ROS_INFO_STREAM("start move");
                 move();
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()) escape();
+                if(needEscape()) mode_ = MODE::ESCAPE;
                 break;
             }
             case MODE::ROTATE: {
@@ -199,7 +199,11 @@ void Dock10Executor::timerCB(const ros::TimerEvent& e) {
             }
             case MODE::IDLE: {
                 findSquardCost(pose_[0],pose_[1]);
-                if(needEscape()) escape();
+                if(needEscape()) mode_ = MODE::ESCAPE;
+                break;
+            }
+            case MODE::ESCAPE: {
+                escape();
                 break;
             }
         }
@@ -283,7 +287,7 @@ void Dock10Executor::move() {
             int mapY = front_check_point_[i].second * 100;
             int cost = (mapY-1) * 300 + mapX;
             
-            if(costmap_data[cost] > 0 || costmap_data[cost] == -1){
+            if((costmap_data[cost] > 0 || costmap_data[cost] == -1) && mode_ == MODE::MOVE){
                 ROS_INFO("cost = %d", cost);
                 ROS_INFO("costmap_data[cost] = %d", costmap_data[cost]);
                 mode_ = MODE::IDLE;
@@ -544,7 +548,7 @@ void Dock10Executor::escape(){
 
     goal_[0] = escape_coordinate.first;
     goal_[1] = escape_coordinate.second;
-    mode_ = MODE::MOVE;
+    move();
 }
 
 void Dock10Executor::poseCB_Odometry(const nav_msgs::Odometry& data) {
