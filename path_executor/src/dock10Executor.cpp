@@ -519,13 +519,15 @@ void Dock10Executor::printSquardCost(){
 }
 
 std::pair<double,double> Dock10Executor::coordinateAvailable(double mapX, double mapY){
-
+    mapX = mapX * 100;
+    mapY = mapY * 100;
     if(mapX > 300) mapX = 300;
     else if (mapX < 0) mapX = 0;
 
     if(mapY > 200) mapY = 200;
     else if (mapY < 0) mapY = 0;
-
+    mapX = mapX / 100;
+    mapY = mapY / 100;
     return std::pair<double, double>(mapX, mapY);
 }
 
@@ -536,18 +538,39 @@ void Dock10Executor::escape(){
     double mapY = pose_[1] * 100;
     double map_rivalX = rival_x_ * 100;
     double map_rivalY = rival_y_ * 100;
-    double escape_x = 0;
-    double escape_y = 0;
 
-    double scalar_wall = 0.3;
-    double scalar_rival = 0.5;
-    escape_x = (150 - mapX) * scalar_wall + (map_rivalX - mapX) * scalar_rival;
-    escape_y = (100 - mapY) * scalar_wall + (map_rivalY - mapY) * scalar_rival;
+    double det_rival_x = map_rivalX - mapX;
+    double det_rival_y = map_rivalY - mapY;
+    double det_map_x = 150 - mapX;
+    double det_map_y = 100 - mapY;
+
+    double scalar_wall = 0;
+    double scalar_rival = 0;
+    if(std::abs(det_rival_x) > std::abs(det_map_x)) {
+        scalar_wall = 0.7;
+        scalar_rival = 0.3;
+    }
+    else if(std::abs(det_rival_x) < std::abs(det_map_x)) {
+        scalar_wall = 0.3;
+        scalar_rival = 0.7;
+    }
+    else {
+        scalar_wall = 0.5;
+        scalar_rival = 0.5;
+    }
+    double escape_x = det_map_x * scalar_wall - det_rival_x * scalar_rival;
+    double escape_y = det_map_y * scalar_wall - det_rival_y * scalar_rival;
 
     double goal_x = pose_[0] + (escape_x) * 0.01;
     double goal_y = pose_[1] + (escape_y) * 0.01;
-
+    std::cout << "scalar_wall: " << scalar_wall << " scalar_rival: " << scalar_rival << std::endl;
+    std::cout << "mapX: " << mapX << " mapY: " << mapY << std::endl;
+    std::cout << "det_map_x: " << det_map_x << " det_map_y: " << det_map_y << std::endl;
+    std::cout << "map_rivalX: " << map_rivalX << " map_rivalY: " << map_rivalY << std::endl;
+    std::cout << "det_rival_x: " << det_rival_x << " det_rival_y: " << det_rival_y << std::endl;
+    std::cout << "goal_x: " << goal_x << " goal_y: " << goal_y << std::endl;
     std::pair<double, double> escape_coordinate = coordinateAvailable(goal_x, goal_y);
+    std::cout << "goal_x: " << escape_coordinate.first << " goal_y: " << escape_coordinate.second << std::endl;
     
     original_goal[0] = goal_[0];
     original_goal[1] = goal_[1];
@@ -582,8 +605,8 @@ void Dock10Executor::poseCB_PoseWithCovarianceStamped(const geometry_msgs::PoseW
 }
 
 void Dock10Executor::rivalCB_Odometry(const nav_msgs::Odometry& data){
-    double rival_x_ = data.pose.pose.position.x;
-    double rival_y_ = data.pose.pose.position.y;
+    rival_x_ = data.pose.pose.position.x;
+    rival_y_ = data.pose.pose.position.y;
     if (rival_x_ < 0 || rival_x_ > 3.0 || rival_y_ < 0 || rival_y_ > 2.0) {
         rival_dist_ = 100;
         return ;
