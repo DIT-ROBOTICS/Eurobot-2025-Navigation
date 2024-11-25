@@ -536,14 +536,14 @@ void Dock10Executor::escape(){
     double goal_x = pose_[0] + (escape_x) * 0.01;
     double goal_y = pose_[1] + (escape_y) * 0.01;
 
-    pair<double, double> escape_coordinate = coordinateAvailable(goal_x, goal_y);
+    std::pair<double, double> escape_coordinate = coordinateAvailable(goal_x, goal_y);
     
     original_goal[0] = goal_[0];
     original_goal[1] = goal_[1];
     original_goal[2] = goal_[2];
 
-    goal_[0] = goal_x;
-    goal_[1] = goal_y;
+    goal_[0] = escape_coordinate.first;
+    goal_[1] = escape_coordinate.second;
     mode_ = MODE::MOVE;
 }
 
